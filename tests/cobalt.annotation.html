@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+	<script type="text/javascript" src="../src/cobalt.js"></script>
+	<script type="text/javascript" src="../src/cobalt.test.js"></script>
+	<script type="text/javascript" src="../src/cobalt.range.js"></script>
+	<script type="text/javascript" src="../src/cobalt.annotation.js"></script>
+</head>
+<body>
+<div id="hopeTestOutput"></div>
+<script type="text/javascript">
+
+	var test = cobalt.test.create();
+
+	test.testCreate = function() {
+		var ann = cobalt.annotation([0,10],'div class="test"');
+		this.assertEquals( ''+ann, '0-10:div class="test"');
+	}
+
+	test.run();
+
+</script>
+</body>
+</html>

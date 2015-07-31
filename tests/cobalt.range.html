@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+	<script type="text/javascript" src="../src/cobalt.js"></script>
+	<script type="text/javascript" src="../src/cobalt.test.js"></script>
+	<script type="text/javascript" src="../src/cobalt.range.js"></script>
+</head>
+<body>
+<div id="hopeTestOutput"></div>
+<script type="text/javascript">
+
+	var test = cobalt.test.create();
+
+	test.testCreate = function() {
+		var range1 = cobalt.range( 5, 20 );
+		this.assertEquals(range1.start, 5);
+		this.assertEquals(range1.end, 20);
+		this.assertEquals(range1.size, 15);
+		this.assertEquals(range1.count, 1);
+		this.assertEquals('' + range1, '5-20');
+	}
+
+	test.testImmutable = function() {
+		var range1 = cobalt.range(5,20);
+		var exception = 0;
+		range1.start = 10;
+		this.assertEquals(range1.start, 5);
+		range1.ranges[0].start = 10;
+		this.assertEquals(range1.start, 5);
+		try {
+			range1.ranges.push('frop');
+		} catch(e) {
+			exception++;
+		}
+		this.assertEquals(range1.ranges.length, 1);
+		this.assertEquals(exception, 1);
+	}
+
+	test.testDelete = function() {
+		var r = cobalt.range(5, 20);
+		var s = r.delete( cobalt.range(10,15) );
+		this.assertEquals(s.start, 5);
+		this.assertEquals(s.end, 15);
+		this.assertEquals(r.end, 20);
+	}
+
+	test.testInsert = function() {
+		var r = cobalt.range(5, 20);
+		var s = r.insert( cobalt.range(10,15) );
+		this.assertEquals(s.start, 5);
+		this.assertEquals(s.end, 25);
+		this.assertEquals(r.end, 20);	
+	}
+
+	test.testCreateDisjointed = function() {
+		var r = cobalt.range([[5,10],[15,20]]);
+		this.assertEquals(''+r, '5-10,15-20');
+		var r = cobalt.range([[15,20],[5,10]]);
+		this.assertEquals(''+r, '5-10,15-20');		
+		var r = cobalt.range([[10,20],[5,12]]);
+		this.assertEquals(''+r, '5-20');		
+	}
+
+	test.testDeleteDisjointed = function() {
+		var r = cobalt.range([[5,10],[15,20]]);
+		s = r.delete( cobalt.range(10,14) );
+		this.assertEquals(''+s, '5-10,11-16');
+		s = r.delete( cobalt.range(10,15) );
+		this.assertEquals(''+s, '5-15');
+		s = r.delete( cobalt.range(9,16) );
+		this.assertEquals(''+s, '5-13');
+	}
+
+	test.testEmptyRange = function() {
+		var r = cobalt.range();
+		this.assertNull(r.start);
+		this.assertNull(r.end);
+		this.assertNull(r.size);
+		this.assertEquals(r.count, 0);
+	}
+
+	test.testMove = function() {
+		var r = cobalt.range(5,10);
+		s = r.move(-3);
+		this.assertEquals(''+s, '2-7');
+	}
+
+	test.testExclude = function() {
+		var r = cobalt.range(5,10);
+		s = r.exclude( cobalt.range(7,9) );
+		this.assertEquals(''+s, '5-7,9-10');
+		var r = cobalt.range([[5,10],[15,20]]);
+		s = r.exclude( cobalt.range([[3,7],[17,22]]));
+		this.assertEquals(''+s, '7-10,15-17');
+	}
+
+	test.testInvert = function() {
+		var r = cobalt.range([[5,10],[15,20]]);
+		var s = r.invert(30);
+		this.assertEquals(''+s, '0-5,10-15,20-30');
+	}
+
+	test.run();
+
+</script>
+</body>
+</html>
