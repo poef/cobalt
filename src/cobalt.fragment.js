@@ -1,7 +1,7 @@
 /**
  * Cobalt Fragment type
  * A Fragment is a combination of plain text and a list of annotations.
- * The list of annotations will allways be sorted by start and then end position.
+ * The list of annotations will always be sorted by start and then end position.
  * A fragment is immutable, all operations on it return a new fragment.
  */
 cobalt.fragment = function(text, annotations) {
@@ -30,6 +30,24 @@ cobalt.fragment = function(text, annotations) {
 		Object.freeze(this.list);
 	}
 
+	function parseAnnotations(annotations) {
+		var reMarkupLine = /^(?:(([0-9]+\-[0-9]+)(,[0-9]+\-[0-9]+)*))?:(.*)$/m;
+		var matches = [];
+		var list = [];
+		while ( annotations && ( matches = annotations.match(reMarkupLine) ) ) {
+			list.push(
+				cobalt.annotation(
+					matches[1].split(',').map(function(rs) {
+						return rs.split('-');
+					}),
+					matches[matches.length-1]
+				)
+			);
+			annotations = annotations.substr( matches[0].length + 1 );
+		}
+		return list;
+	}
+
 	cobaltAnnotationList.prototype = {
 		constructor: cobaltAnnotationList,
 		/**
@@ -53,6 +71,10 @@ cobalt.fragment = function(text, annotations) {
 					this.list.concat(range.list)
 				);
 			} else {
+				if ( typeof range.tag != 'undefined' ) {
+					tag   = range.tag;
+					range = range.range;
+				}
 				return new cobaltAnnotationList( 
 					this.list.slice().push(
 						cobalt.annotation(range,tag)
@@ -68,6 +90,10 @@ cobalt.fragment = function(text, annotations) {
 			if ( range instanceof cobaltAnnotationList ) {
 				// FIXME: fill in
 			} else {
+				if ( typeof range.tag != 'undefined' ) {
+					tag   = range.tag;
+					range = range.range;
+				}
 				var result = [];
 				this.list.foreach(function(ann) {
 					if ( ann.overlaps(range) && ann.has(tag) ) {
@@ -198,10 +224,33 @@ cobalt.fragment = function(text, annotations) {
 			this.text = text.text;
 			this.annotations = text.annotations;
 		} else {
+			if ( typeof annotations == 'undefined' ) {
+				var result = parseFragment(text);
+				if ( result.text || result.annotations) {
+					text = result.text;
+					annotations = result.annotations;
+				}
+			}
 			this.text = '' + text;
-			this.annotations = new cobaltAnnotationsList( annotations );
+			this.annotations = new cobaltAnnotationList( annotations );
 		}
 		Object.freeze(this);
+	}
+
+	function parseFragment(fragment) {
+		var info = cobalt.mime.decode( fragment );
+		var text = '', annotations = '';
+		info.parts.foreach( function(part) {
+			switch( part.headers['content-type'] ) {
+				case 'text/plain' :
+					text = part.message;
+				break;
+				case 'text/hope' :
+					annotations = part.message;
+				break;
+			}
+		}
+		return { text: text, annotations: annotations };
 	}
 
 	cobaltFragment.prototype = {
