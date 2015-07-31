@@ -61,13 +61,13 @@ cobalt.mime = (function(self) {
 
 	self.decode = function( message ) {
 		var parsed = self.getHeaders( message );
+		parsed.parts = [];
 		if ( parsed.headers.boundary ) {
 			var parts = parsed.message.split( '\n--'+parsed.headers.boundary+"\n" );
 			var message = parts.shift();
 			if ( message ) {
 				parsed.message = message;
 			}
-			parsed.parts = [];
 			while ( part = parts.shift() ) {
 				parsed.parts.push( self.decode(part) );		
 			}
