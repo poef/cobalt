@@ -14,16 +14,19 @@ cobalt.annotation = function(range, tag) {
 	Annotation.prototype = {
 		constructor: Annotation,
 		delete: function( range ) {
-			return new Annotation( this.range.delete( range ), this.tag );	
+			var r = this.range.delete(range);
+			return (r.count) ? new Annotation( r, this.tag ) : null;
 		},
 		exclude: function( range ) {
-			return new Annotation( this.range.exclude( range ), this.tag );
+			var r = this.range.exclude(range);
+			return (r.count) ? new Annotation( r, this.tag ) : null;
 		},
 		join: function( range ) {
 			return new Annotation( this.range.join( range ), this.tag );
 		},
 		copy: function( range ) {
-			return new Annotation( this.range.copy( range ), this.tag );
+			var r = this.range.copy( range );
+			return (r.count) ? new Annotation( r, this.tag ) : null;
 		},
 		compare: function( annotation ) {
 			return this.range.compare( annotation.range );
