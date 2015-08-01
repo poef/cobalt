@@ -10,8 +10,11 @@ cobalt.fragment = function(text, annotations) {
 	 * The annotations list of a fragment, with the public api.
 	 */
 	function cobaltAnnotationList( annotations ) {
+		this.type = 'cobaltAnnotationList';
 		this.list = [];
-		if ( annotations instanceof cobaltAnnotationList ) {
+		if ( cobalt.implements(annotations,'cobaltAnnotationList') ) {
+			// FIXME: create private factory method for cobaltAnnotationList
+			// that just returns the input object in this case.
 			this.list = annotations.list;
 		} else if ( Array.isArray( annotations) ) {
 			this.list = annotations;
@@ -160,6 +163,14 @@ cobalt.fragment = function(text, annotations) {
 		 */
 		map: function( f ) {
 			return new cobaltAnnotationList( this.list.map(f) );
+		},
+		/**
+		 * Search through all annotations and return a new annotation list with
+		 * only those annotations that match the selector.
+		 */
+		query: function( selector ) {
+			//FIXME: design a selector syntax that makes sense for cobalt (no nesting)
+			//then implement 
 		}
 
 	};
@@ -220,20 +231,16 @@ cobalt.fragment = function(text, annotations) {
 	 * Cobalt Fragment type and public api.
 	 */
 	function cobaltFragment( text, annotations ) {
-		if ( text instanceof cobaltFragment ) {
-			this.text = text.text;
-			this.annotations = text.annotations;
-		} else {
-			if ( typeof annotations == 'undefined' ) {
-				var result = parseFragment(text);
-				if ( result.text || result.annotations) {
-					text = result.text;
-					annotations = result.annotations;
-				}
+		this.type = 'cobaltFragment';
+		if ( typeof annotations == 'undefined' ) {
+			var result = parseFragment(text);
+			if ( result.text || result.annotations) {
+				text = result.text;
+				annotations = result.annotations;
 			}
-			this.text = '' + text;
-			this.annotations = new cobaltAnnotationList( annotations );
 		}
+		this.text = '' + text;
+		this.annotations = new cobaltAnnotationList( annotations );
 		Object.freeze(this);
 	}
 
@@ -311,6 +318,32 @@ cobalt.fragment = function(text, annotations) {
 				this.annotations.remove( range, tag )
 			);
 		},
+		/**
+		 * Search through the text using a regular expression or string. Returns a range object
+		 * encompassing all matches.
+		 */
+		search: function( searchRe ) {
+			function escapeRegExp(str) {
+				return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+			}
+			if ( typeof(searchRe) === 'string' ) {
+				searchRe = new RegExp(escapeRegExp(searchRe), 'g');
+			}
+			var result = [];
+			var match;
+			while (match = searchRe.exec(this.text)) {
+				result.push([match.index, match.lastIndex]);
+			}
+			return cobalt.range(result);
+		},
+		/**
+		 * Search through the annotations using a query language approximately like css selectors.
+		 * Returns a range object encompassing all matched ranges.
+		 */
+		query: function( selector ) {
+			//FIXME: design a selector syntax that makes sense for cobalt (no nesting)
+			//then implement 
+		},
 		/*
 		 * Returns a mime encoded string with the text and annotations.
 		 */
@@ -322,5 +355,10 @@ cobalt.fragment = function(text, annotations) {
 		}
 	};
 
-	return new cobaltFragment(text, annotations);
+	if ( cobalt.implements( text, 'cobaltFragment' ) ) {
+		// because cobaltFragment is immutable, we can just return it.
+		return text;
+	} else {
+		return new cobaltFragment(text, annotations);
+	}
 };
