@@ -191,37 +191,47 @@ cobalt.test = (function(self) {
 		return false;
 	}
 
-	cobaltTest.prototype.assertTrue = function( expression ) {
+	cobaltTest.prototype.assertTrue = function( expression, message ) {
+		if (!message) { message = '' };
 		this.countAssert++;
 		if ( expression !== true ) {
-			this.errors.push( 'test failed: expression not true at ' + this.currentTest + ' assertion ' + this.countAssert );
+			this.errors.push( 'test failed: expression not true at ' 
+				+ this.currentTest + ' assertion ' + this.countAssert 
+				+ ': ' + message );
 			this.write( this.errors[ this.errors.length - 1 ] );
 		} else {
 			this.success++;
 		}
 	};
 
-	cobaltTest.prototype.assertFalse = function( expression ) {
+	cobaltTest.prototype.assertFalse = function( expression, message ) {
+		if (!message) { message = '' };
 		this.countAssert++;
 		if ( expression !== false ) {
-			this.errors.push( 'test failed: expression not false at ' + this.currentTest + ' assertion ' + this.countAssert );
+			this.errors.push( 'test failed: expression not false at ' 
+				+ this.currentTest + ' assertion ' + this.countAssert
+				+ ': ' + message );
 			this.write( this.errors[ this.errors.length - 1 ] );
 		} else {
 			this.success++;
 		}
 	}
 
-	cobaltTest.prototype.assertNull = function( expression ) {
+	cobaltTest.prototype.assertNull = function( expression, message) {
+		if (!message) { message = '' };
 		this.countAssert++;
 		if ( expression !== null ) {
-			this.errors.push( 'test failed: expression not null at ' + this.currentTest + ' assertion ' + this.countAssert );
+			this.errors.push( 'test failed: expression not null at ' 
+				+ this.currentTest + ' assertion ' + this.countAssert
+				+ ': ' + message );
 			this.write( this.errors[ this.errors.length - 1 ] );
 		} else {
 			this.success++;
 		}
 	}
 
-	cobaltTest.prototype.assertEquals = function( var1, var2 ) {
+	cobaltTest.prototype.assertEquals = function( var1, var2, message ) {
+		if (!message) { message = '' };
 		this.countAssert++;
 		if ( var1 === var2 ) {
 			this.success++
@@ -272,7 +282,9 @@ cobalt.test = (function(self) {
 				reason = var1 + ' != ' + var2;
 			}
 			if ( reason ) {
-				this.errors.push( 'test failed: variables not equal at ' + this.currentTest + ' assertion ' + this.countAssert + ' reason: ' + reason );
+				this.errors.push( 'test failed: variables not equal at ' 
+					+ this.currentTest + ' assertion ' + this.countAssert
+					+ ': ' + message + '. reason: ' + reason );
 				this.write( this.errors[ this.errors.length - 1 ] );
 			} else {
 				this.success++;
