@@ -13,6 +13,7 @@ cobalt.range = function(s,e) {
 	 * Internal range type that has only a start and end position.
 	 */
 	function SingleRange(s,e) {
+		this.type = 'cobaltSingleRange';
 		this.start = s >= 0 ? s : 0;
 		this.end = e >= this.start ? e : this.start;
 		Object.freeze(this);
@@ -140,14 +141,15 @@ cobalt.range = function(s,e) {
 	};
 
 	function Range(s,e) {
-		if ( s instanceof Range ) {
-			this.ranges = s.ranges.slice(0);
-		} else if ( Array.isArray(s) ) {
+		// type property is needed because instanceof can't check across 
+		// scope boundaries. Range is defined locally.
+		this.type = 'cobaltRange';
+		if ( Array.isArray(s) ) {
 			// TODO: refactor this
 			this.ranges = [];
 			var r = null;
 			for ( var i=0, l=s.length; i<l; i++ ) {
-				if ( s[i] instanceof SingleRange ) {
+				if ( cobalt.implements(s[i], 'cobaltSingleRange') ) {
 					r = s[i];
 				} else if ( Array.isArray(s[i]) && s[i].length < 3 && s[i].length > 0 ) {
 					r = new SingleRange( s[i][0], s[i][1] );
@@ -223,6 +225,7 @@ cobalt.range = function(s,e) {
 		 * Delete (cut) parts of this range.
 		 */
 		delete: function(r) {
+			r = cobalt.range(r);
 			var s = this;
 			for (var i=r.count-1; i>=0; i--) {
 				s = cutLength(s, r.get(i).start, r.get(i).size);
@@ -241,6 +244,7 @@ cobalt.range = function(s,e) {
 		 * Insert character space in this range.
 		 */
 		insert: function(r) {
+			r = cobalt.range(r);
 			var s = this;
 			for (var i=r.count-1; i>=0; i--) {
 				s = insertLength(s, r.get(i).start, r.get(i).size);
@@ -261,18 +265,19 @@ cobalt.range = function(s,e) {
 			return this.ranges.join(',');
 		},
 		/**
-		 * Returns a new range where all parts of the given range have joined/merged with
-		 * this range.
+		 * Returns a new range as a union of this range and the given range.
 		 */
 		join: function(r) {
-			// TODO: implement this.
+			r = cobalt.range(r);
+			return new Range( this.ranges.concat(r.ranges) );
 		},
 		/*
-		 * Returns a new range where all parts that overlap with the given range are
-		 * removed ( not cut ).
+		 * Returns a new range as the relative complement of r.
+		 * All parts that overlap with r are removed ( not cut ). 
 		 */
 		exclude: function(r) {
-			var workstack = this.ranges.slice(0);
+			r = cobalt.range(r);
+			var workstack = this.ranges.slice();
 			workstack.reverse();
 			var donestack = [];
 			var ri = 0;
@@ -301,6 +306,13 @@ cobalt.range = function(s,e) {
 				}
 			}
 			return new Range(donestack);
+		},
+		/**
+		 * Return a new range consisting of the intersection or overlap of this and r.
+		 */
+		intersect: function(r) {
+			r = cobalt.range(r);
+			return this.exclude(r.invert(this.end));
 		},
 		/**
 		 * Return a new range where all positions have moved by the given number of characters
@@ -365,6 +377,10 @@ cobalt.range = function(s,e) {
 		return new Range(s);
 	}
 
-	return new Range(s,e);
-
+	if ( cobalt.implements(s, 'cobaltRange' ) ) {
+		// because Range is immutable, we can just return s
+		return s;
+	} else {
+		return new Range(s,e);
+	}
 }

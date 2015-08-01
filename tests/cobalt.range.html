@@ -69,6 +69,9 @@
 		this.assertEquals(''+s, '5-15');
 		s = r.delete( cobalt.range(9,16) );
 		this.assertEquals(''+s, '5-13');
+		var r = cobalt.range([[0,10],[20,30]]);
+		s = r.delete( [5,10] );
+		this.assertEquals(''+s, '0-5,15-25');		
 	}
 
 	test.testEmptyRange = function() {
@@ -98,6 +101,19 @@
 		var r = cobalt.range([[5,10],[15,20]]);
 		var s = r.invert(30);
 		this.assertEquals(''+s, '0-5,10-15,20-30');
+	}
+
+	test.testIntersect = function() {
+		var r1 = cobalt.range([[5,10],[15,20]]);
+		var r2 = cobalt.range([8,18]);
+		var s = r1.intersect(r2);
+		this.assertEquals(''+s, '8-10,15-18');		
+	}
+
+	test.testJoin = function() {
+		var r1 = cobalt.range([[5,10],[15,20]]);
+		var s = r1.join([8,12]);
+		this.assertEquals(''+s, '5-12,15-20');
 	}
 
 	test.run();
