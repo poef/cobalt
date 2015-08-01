@@ -45,6 +45,8 @@ do not move otherwise.
 
 - `exclude(range)`: Returns a new range with the parts in the given range removed from this range. Only overlapping parts are removed. The positions do not move otherwise.
 
+- `intersect(range)`: Return a new range consisting of the intersection or overlap of this range and the given range.
+
 - `invert(end)`: Returns a new range with all the ranges that are not in this range, in the domain range [0, end].
 
 cobalt.annotation
@@ -66,11 +68,11 @@ An annotation is a combination of a range and a tag. A tag is anything inside th
 ###Methods
 - `delete(range)`: Returns a new annotation with this range deleted. Offsets can move. Returns null if the annotation range is fully deleted.
 
-- `insert(range)`: Returns a new annotation with this range inserted.
-Offsets can move.
+- `insert(range)`: Returns a new annotation with this range inserted. Offsets can move.
 
-- `exclude(range)`: Returns a new annotation with this range excluded.
-Offsets won't move otherwise. Returns null if the annotation range is fully excluded.
+- `exclude(range)`: Returns a new annotation with this range excluded. Offsets won't move otherwise. Returns null if the annotation range is fully excluded.
+
+-`copy(range)`: Returns a new annotation with the overlapping part of the given range, or null if there is no overlap.
 
 - `join(range)`: Returns a new annotation with this range joined. Offsets won't move otherwise.
 
@@ -103,7 +105,8 @@ A fragment is a combination of plain text and a list of annotations. The list of
 - `insert(range)`: Returns a combined new fragment with the inserted fragment text and annotations inserted at the given position.
 - `apply(range, tag)`: Returns a new fragment, with the given range/tag or annotation or annotationlist applied.
 - `remove(range, tag)`: Returns a new fragment, with the given range/tag or annotation or annotationlist removed.
-
+- `query(selector)`:
+- `search(re)`:
 
 cobalt.fragment.annotations
 ---------------------------
@@ -121,4 +124,4 @@ A list of annotations in a fragment.
 - `insert(range)`:
 - `filter(callback)`:
 - `map(callback)`:
-
+- `query(selector)`:
