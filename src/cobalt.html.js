@@ -1,14 +1,4 @@
-cobalt editor
-- npm / bower / grunt installeren
-- requirejs oid toevoegen
-- fast render door immutable data -> volledige render 1 keer doen, bij creatie
-
-
-simplified html
-h1/h2/h3/p/ol/ul/blockquote
-em/strong/a
-
-cobalt.html = (function(self) {
+cobalt.html = (function(html) {
 	
 	var rules = {
 		block: ['h1','h2','h3','p','ol','ul','li','blockquote','br'],
@@ -38,10 +28,24 @@ cobalt.html = (function(self) {
 	rules.toplevel = rules.block.filter(function(tag) { return tag!='li';});
 	
 
-	self.renderFragment = function(fragment) {
+	html.cobaltToHtml = function(fragment) {
 		var result = '';
 		
 		return result;
 	};
 
+    html.cobaltToDom = function(fragment, dom) {
+        
+    };
+        
+    html.cobaltDomToHtmlDom = function(relativeFragment, dom) {
+        // cobalt fragment with relative offsets and links to html nodes to html dom
+        // cobalt dom serves as a shadow dom for the html dom
+    };
+        
+    html.htmlToCobalt = function(htmlString) {
+      
+        return fragment;
+    };
+        
 })(cobalt.html || {});
