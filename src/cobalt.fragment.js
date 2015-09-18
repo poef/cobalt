@@ -165,6 +165,12 @@ cobalt.fragment = function(text, annotations) {
 			return new cobaltAnnotationList( this.list.map(f) );
 		},
 		/**
+		 *
+		 */
+		reduce: function( previousValue, f ) {
+			return this.list.reduce( previousValue, f);
+		},
+		/**
 		 * Search through all annotations and return a new annotation list with
 		 * only those annotations that match the selector.
 		 */
