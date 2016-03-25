@@ -1,7 +1,7 @@
-cobalt.annotation = function(range, tag) {
+module.exports = function(range, tag) {
 
 	/**
-	 * Fast trim algorithm (trim19) from 
+	 * Fast trim algorithm (trim19) from
 	 * https://yesudeep.wordpress.com/2009/07/31/even-faster-string-prototype-trim-implementation-in-javascript/
 	 */
 	function trim(str) {
@@ -22,7 +22,7 @@ cobalt.annotation = function(range, tag) {
 	Annotation.prototype = {
 		constructor: Annotation,
 		/**
-		 * Returns a new annotation with this range deleted. Offsets can move. 
+		 * Returns a new annotation with this range deleted. Offsets can move.
 		 * Returns null if the annotation range is fully deleted.
 		 */
 		delete: function( range ) {
@@ -37,7 +37,7 @@ cobalt.annotation = function(range, tag) {
 			return new Annotation( this.range.insert(range), this.tag);
 		},
 		/**
-		 * Returns a new annotation with this range excluded. Offsets won't move otherwise. 
+		 * Returns a new annotation with this range excluded. Offsets won't move otherwise.
 		 * Returns null if the annotation range is fully excluded.
 		 */
 		exclude: function( range ) {
@@ -51,7 +51,7 @@ cobalt.annotation = function(range, tag) {
 			return new Annotation( this.range.join( range ), this.tag );
 		},
 		/**
-		 * Returns a new annotation with the overlapping part of the given range, 
+		 * Returns a new annotation with the overlapping part of the given range,
 		 * r null if there is no overlap.
 		 */
 		copy: function( range ) {
@@ -59,14 +59,14 @@ cobalt.annotation = function(range, tag) {
 			return (r.count) ? new Annotation( r, this.tag ) : null;
 		},
 		/**
-		 * Returns -1, 0, or 1, depending if the range in the given annotation is smaller, 
+		 * Returns -1, 0, or 1, depending if the range in the given annotation is smaller,
 		 * equal or larger than the annotation range.
 		 */
 		compare: function( annotation ) {
 			return this.range.compare( annotation.range );
 		},
 		/**
-		 * Returns true if the first word in this tag is the same as the first word 
+		 * Returns true if the first word in this tag is the same as the first word
 		 * in the given tag.
 		 */
 		has: function( tag ) {

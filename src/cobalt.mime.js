@@ -1,4 +1,4 @@
-cobalt.mime = (function(self) {
+module.exports = (function(self) {
 	// minimal mime encoding/decoding, stolen from https://github.com/andris9/mimelib/blob/master/lib/mimelib.js
 
 	self.getHeaders = function( message ) {

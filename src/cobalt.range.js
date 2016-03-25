@@ -7,7 +7,7 @@
  * SingleRanges have a start and end, where start <= end, and a size (end - start)
  * Ranges have a start, end and size, and a count - the number of SingleRanges >= 0
  */
-cobalt.range = function(s,e) {
+module.exports = function(s,e) {
 
 	/**
 	 * Internal range type that has only a start and end position.
@@ -47,7 +47,7 @@ cobalt.range = function(s,e) {
 		 */
 		collapse: function(toEnd) {
 			if ( toEnd ) {
-				return new SingleRange(this.end, this.end); 
+				return new SingleRange(this.end, this.end);
 			} else {
 				return new SingleRange(this.start, this.start);
 			}
@@ -141,7 +141,7 @@ cobalt.range = function(s,e) {
 	};
 
 	function Range(s,e) {
-		// type property is needed because instanceof can't check across 
+		// type property is needed because instanceof can't check across
 		// scope boundaries. Range is defined locally.
 		this.type = 'cobaltRange';
 		if ( Array.isArray(s) ) {
@@ -235,7 +235,7 @@ cobalt.range = function(s,e) {
 		/**
 		 * Run a callback on each subrange.
 		 */
-		foreach: function(f) {
+		forEach: function(f) {
 			for (var i=0,l=this.count; i<l; i++) {
 				f(this.get(i));
 			}
@@ -273,7 +273,7 @@ cobalt.range = function(s,e) {
 		},
 		/*
 		 * Returns a new range as the relative complement of r.
-		 * All parts that overlap with r are removed ( not cut ). 
+		 * All parts that overlap with r are removed ( not cut ).
 		 */
 		exclude: function(r) {
 			r = cobalt.range(r);
@@ -320,7 +320,7 @@ cobalt.range = function(s,e) {
 		 */
 		move: function(by) {
 			var s = [];
-			this.foreach(function(re) {
+			this.forEach(function(re) {
 				s.push( new SingleRange(re.start + by, re.end + by ));
 			});
 			return new Range(s);
@@ -330,8 +330,24 @@ cobalt.range = function(s,e) {
 		 * within a maximum size given by 'end'.
 		 */
 		invert: function(end) {
-			return new Range(0,end).exclude(this);			
-		}
+			return new Range(0,end).exclude(this);
+		},
+		/**
+		 * Returns -1, 0, or 1 if given range is smaller, equal or larger than this range.
+		 */
+		compare: function(s) {
+			if ( s.start < this.start ) {
+				return 1;
+			} else if ( s.start > this.start ) {
+				return -1;
+			} else if ( s.end < this.end ) {
+				return 1;
+			} else if ( s.end > this.end ) {
+				return -1;
+			}
+			return 0;
+		},
+
 	};
 
 
@@ -340,7 +356,7 @@ cobalt.range = function(s,e) {
 			return this;
 		}
 		var s = [];
-		range.foreach(function(r) {
+		range.forEach(function(r) {
 			if ( r.end <= pos ) { // range before cut
 				s.push( new SingleRange( r.start, r.end ) );
 			} else if ( r.start > ( pos + length ) ) { // range after cut
@@ -352,8 +368,8 @@ cobalt.range = function(s,e) {
 				} else {
 					s.push( new SingleRange( start, r.end - length ) );
 				}
-				
-			} else if ( r.start < pos ) { // range extends before cut 
+
+			} else if ( r.start < pos ) { // range extends before cut
 				s.push( new SingleRange( r.start, pos ) );
 			} // else: range will be cut away
 		});
@@ -365,7 +381,7 @@ cobalt.range = function(s,e) {
 			return this;
 		}
 		var s = [];
-		range.foreach(function(r) {
+		range.forEach(function(r) {
 			if ( r.end <= pos ) {
 				s.push( new SingleRange( r.start, r.end ) );
 			} else if ( r.start > pos ) {

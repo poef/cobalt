@@ -1,3 +1,4 @@
+
 cobalt = (function(self) {
 
 	var cobaltError = function(message, code) {
@@ -18,3 +19,9 @@ cobalt = (function(self) {
 
 	return self;
 })(this.cobalt || {});
+
+cobalt.range      = require('./cobalt.range');
+cobalt.annotation = require('./cobalt.annotation');
+cobalt.mime       = require('./cobalt.mime');
+cobalt.fragment   = require('./cobalt.fragment');
+cobalt.html       = require('./cobalt.html');

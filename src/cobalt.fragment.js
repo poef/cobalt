@@ -4,7 +4,7 @@
  * The list of annotations will always be sorted by start and then end position.
  * A fragment is immutable, all operations on it return a new fragment.
  */
-cobalt.fragment = function(text, annotations) {
+module.exports = function(text, annotations) {
 
 	/**
 	 * The annotations list of a fragment, with the public api.
@@ -41,7 +41,9 @@ cobalt.fragment = function(text, annotations) {
 			list.push(
 				cobalt.annotation(
 					matches[1].split(',').map(function(rs) {
-						return rs.split('-');
+						return rs.split('-').map(function(re) {
+							return parseInt(re);
+						});
 					}),
 					matches[matches.length-1]
 				)
@@ -56,7 +58,7 @@ cobalt.fragment = function(text, annotations) {
 		/**
 		 * Returns the number of annotations in the list.
 		 */
-		count: get function() {
+		get count () {
 			return this.list.length;
 		},
 		/**
@@ -78,7 +80,7 @@ cobalt.fragment = function(text, annotations) {
 					tag   = range.tag;
 					range = range.range;
 				}
-				return new cobaltAnnotationList( 
+				return new cobaltAnnotationList(
 					this.list.slice().push(
 						cobalt.annotation(range,tag)
 					)
@@ -98,9 +100,9 @@ cobalt.fragment = function(text, annotations) {
 					range = range.range;
 				}
 				var result = [];
-				this.list.foreach(function(ann) {
+				this.list.forEach(function(ann) {
 					if ( ann.overlaps(range) && ann.has(tag) ) {
-						var r = ann.range.exclude(range); 
+						var r = ann.range.exclude(range);
 						if ( r.start != null ) {
 							result.push( cobalt.annotation( r, ann.tag ) );
 						}
@@ -110,14 +112,15 @@ cobalt.fragment = function(text, annotations) {
 				});
 				return new cobaltAnnotationList(result);
 			}
-		}
+		},
+
 		/**
 		 * Returns a new list with all annotations cleared on the given range.
 		 * Clear doesn't move the annotations, it just removes parts or all of them.
 		 */
 		clear: function(range) {
 			var result = [];
-			this.list.foreach(function(ann) {
+			this.list.forEach(function(ann) {
 				var r = ann.range.exclude(range);
 				if ( r.start != null ) {
 					result.push( cobalt.annotation( r, ann.tag ) );
@@ -133,11 +136,11 @@ cobalt.fragment = function(text, annotations) {
 		 */
 		delete: function(range) {
 			var result = [];
-			this.list.foreach(function(ann) {
+			this.list.forEach(function(ann) {
 				var r = ann.range.delete(range);
 				if ( r.start != null ) {
 					result.push( cobalt.annotation( r, ann.tag ) );
-				}				
+				}
 			});
 			return new cobaltAnnotationList(result);
 		},
@@ -147,7 +150,7 @@ cobalt.fragment = function(text, annotations) {
 		 */
 		insert: function(range) {
 			var result = [];
-			this.list.foreach(function(ann) {
+			this.list.forEach(function(ann) {
 				result.push(cobalt.annotation( ann.insert(range), ann.tag ) );
 			});
 			return new cobaltAnnotationList(result);
@@ -176,7 +179,10 @@ cobalt.fragment = function(text, annotations) {
 		 */
 		query: function( selector ) {
 			//FIXME: design a selector syntax that makes sense for cobalt (no nesting)
-			//then implement 
+			//then implement
+		},
+		forEach: function( f ) {
+			this.list.forEach(f);
 		}
 
 	};
@@ -184,16 +190,16 @@ cobalt.fragment = function(text, annotations) {
 	/**
 	 * Non public text api.
 	 */
-	var text = {
+	var cobaltText = {
 		delete: function(text, range) {
-			range.ranges.reverse().foreach(function(re) {
+			range.ranges.reverse().forEach(function(re) {
 				text = text.slice(0, re.start) + text.slice(re.end);
 			});
 			return text;
 		},
 		copy: function(text, range) {
 			var result = '';
-			range.ranges.foreach(function(re) {
+			range.ranges.forEach(function(re) {
 				result += text.slice(re.start, re.end);
 			});
 			return result;
@@ -206,17 +212,17 @@ cobalt.fragment = function(text, annotations) {
 	/**
 	 * Non public annotations api.
 	 */
-	var annotations = {
+	var cobaltAnnotations = {
 		delete: function(annotations, range) {
 			result = [];
-			annotations.foreach(function(ann) {
+			annotations.forEach(function(ann) {
 				result.push( ann.delete(range) );
-			}
+			});
 			return new cobaltAnnotationList(result);
 		},
 		copy: function(annotations, range) {
 			result = [];
-			annotations.foreach(function(ann) {
+			annotations.forEach(function(ann) {
 				if ( ann.range.overlaps(range) ) {
 					result.push( cobalt.annotation( ann.range.overlap(range), ann.tag ) );
 				}
@@ -226,7 +232,7 @@ cobalt.fragment = function(text, annotations) {
 		insert: function(annotations, position, size ) {
 			result = [];
 			var insertedRange = cobalt.range(position, position+size);
-			annotations.foreach(function(ann) {
+			annotations.forEach(function(ann) {
 				result.push( cobalt.annotation( ann.range.insert( insertedRange ), ann.tag ));
 			});
 			return new cobaltAnnotationList(result);
@@ -253,7 +259,7 @@ cobalt.fragment = function(text, annotations) {
 	function parseFragment(fragment) {
 		var info = cobalt.mime.decode( fragment );
 		var text = '', annotations = '';
-		info.parts.foreach( function(part) {
+		info.parts.forEach( function(part) {
 			switch( part.headers['content-type'] ) {
 				case 'text/plain' :
 					text = part.message;
@@ -262,7 +268,7 @@ cobalt.fragment = function(text, annotations) {
 					annotations = part.message;
 				break;
 			}
-		}
+		});
 		return { text: text, annotations: annotations };
 	}
 
@@ -273,22 +279,22 @@ cobalt.fragment = function(text, annotations) {
 		 */
 		delete: function( range ) {
 			return new cobaltFragment(
-				text.delete( this.text, range ),
-				annotations.delete( this.annotations, range )
+				cobaltText.delete( this.text, range ),
+				cobaltAnnotations.delete( this.annotations, range )
 			);
 		},
 		/**
 		 * Returns a new fragment with only the parts that overlap the given range.
-		 * The new fragment adds all text slices matching the range together as one 
+		 * The new fragment adds all text slices matching the range together as one
 		 * single text. All annotations are moved/cut to match this new text.
 		 */
 		copy: function( range ) {
-			return new cobaltFragment( 
-				text.copy( this.text, range ), 
-				annotations.copy( 
-					this.annotations, 
-					range.delete( 
-						range.invert(this.text.length) 
+			return new cobaltFragment(
+				cobaltText.copy( this.text, range ),
+				cobaltAnnotations.copy(
+					this.annotations,
+					range.delete(
+						range.invert(this.text.length)
 					)
 				)
 			);
@@ -300,18 +306,18 @@ cobalt.fragment = function(text, annotations) {
 		insert: function( position, fragment ) {
 			fragment = new cobaltFragment(fragment);
 			return new cobaltFragment(
-				text.insert( this.text, fragment.text, position ),
-				annotations
+				cobaltText.insert( this.text, fragment.text, position ),
+				cobaltAnnotations
 				.insert( this.annotations, position, fragment.text.length )
-				.apply( annotations.insert( fragment.annotations, 0, position ) );
+				.apply( annotations.insert( fragment.annotations, 0, position ) )
 			);
 		},
 		/**
 		 * Returns a new range, with the given range/tag or annotation or annotationlist applied
 		 */
-		apply: function( range, tag ) { 
-			return new cobaltFragment( 
-				this.text, 
+		apply: function( range, tag ) {
+			return new cobaltFragment(
+				this.text,
 				this.annotations.apply( range, tag )
 			);
 		},
@@ -319,8 +325,8 @@ cobalt.fragment = function(text, annotations) {
 		 * Returns a new range, with the given range/tag or annotation or annotationlist removed
 		 */
 		remove: function( range, tag ) {
-			return new cobaltFragment( 
-				this.text, 
+			return new cobaltFragment(
+				this.text,
 				this.annotations.remove( range, tag )
 			);
 		},
@@ -348,14 +354,14 @@ cobalt.fragment = function(text, annotations) {
 		 */
 		query: function( selector ) {
 			//FIXME: design a selector syntax that makes sense for cobalt (no nesting)
-			//then implement 
+			//then implement
 		},
 		/*
 		 * Returns a mime encoded string with the text and annotations.
 		 */
 		toString: function() {
-			return cobalt.mime.encode( [ 
-				'Content-type: text/plain\n\n' + this.text, 
+			return cobalt.mime.encode( [
+				'Content-type: text/plain\n\n' + this.text,
 				'Content-type: text/cobalt\n\n' + this.annotations
 			]);
 		}
