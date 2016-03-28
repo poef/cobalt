@@ -35,3 +35,24 @@ tap.test('render-insert', function(t) {
     t.equal(h, '<p><strong>This <em>is a</em></strong><em> test</em></p>', 'Correctly nest overlapping tags');
     t.end();
 });
+
+tap.test('render-insert', function(t) {
+    var f = cobalt.fragment('This is a test', "0-14:p\n5-9:h1");
+    var h = cobalt.html.render(f);
+    t.equal(h, '<p>This </p><h1>is a</h1><p> test</p>', 'Close tags that are less specific and incompatible');
+    t.end();
+});
+
+tap.test('render-insert', function(t) {
+    var f = cobalt.fragment('This is a test', "0-14:p\n0-14:h1");
+    var h = cobalt.html.render(f);
+    t.equal(h, '<h1>This is a test</h1>', 'Discard tags that are less specific and incompatible');
+    t.end();
+});
+
+tap.test('render-insert', function(t) {
+    var f = cobalt.fragment('This is a test', "0-14:p\n0-0:img\n0-14:h1");
+    var h = cobalt.html.render(f);
+    t.equal(h, '<p><img></p><h1>This is a test</h1>', 'Keep tags around inserted stuff');
+    t.end();
+});

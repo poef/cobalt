@@ -171,15 +171,16 @@ module.exports = (function(self) {
             return pointer;
         }
 
-        function Element(tag, parentNode)
+        function Element(tag, parentNode, insertion)
         {
             this.tag         = tag;
+            this.insertion   = insertion ? true : false;
             this.tagName     = tag ? stripTag(tag) : '';
             this.parentNode  = parentNode;
             this.childNodes  = [];
-            this.appendChild = function( tag )
+            this.appendChild = function( tag, insertion )
             {
-                var child = new Element(tag, this );
+                var child = new Element(tag, this, insertion );
                 this.childNodes.push( child );
                 return child;
             };
@@ -202,7 +203,7 @@ module.exports = (function(self) {
                         return true;
                     }
                 }
-                return false;
+                return this.insertion;
             };
         }
 
@@ -211,14 +212,17 @@ module.exports = (function(self) {
         var current     = rootElement;
         var position    = 0;
         var stackedList = getStackedList(fragment.annotations);
+        var closed      = [];
 
         function insertEntry(entry) {
             var pointer = current;
-            var closed  = [];
             switch ( entry.type ) {
                 case 'start':
                     while ( pointer && !canHaveChild(pointer.tagName, entry.tagName ) ) {
                         closed.push(pointer);
+                        if (!pointer.hasContents() ) {
+                            pointer.parentNode.removeChild(pointer);
+                        }
                         pointer = pointer.parentNode;
                     }
                     if ( pointer ) {
@@ -233,6 +237,9 @@ module.exports = (function(self) {
                     var hasContents = false;
                     while ( pointer && pointer.tagName!= entry.tagName ) {
                         closed.push(pointer);
+                        if (!pointer.hasContents() ) {
+                            pointer.parentNode.removeChild(pointer);
+                        }
                         pointer = pointer.parentNode;
                     }
                     if ( pointer ) {
@@ -253,7 +260,7 @@ module.exports = (function(self) {
                         pointer = pointer.parentNode;
                     }
                     if ( pointer ) {
-                        pointer.appendChild(entry.tag);
+                        pointer.appendChild(entry.tag, true);
                         pointer = null;
                     }
                 break;
@@ -269,6 +276,7 @@ module.exports = (function(self) {
             }
             stack.forEach(insertEntry);
             skipped.forEach(insertEntry);
+
             return current;
         }, rootElement);
 
