@@ -26,8 +26,13 @@ module.exports = function(text, annotations) {
 			return ann.range.start != null;
 		});
 		// sort by range
-		this.list.sort( function( a, b ) {
-			return a.range.compare( b.range );
+		this.list.sort( function(a, b) {
+			if ( a.range.start < b.range.start ) {
+				return -1;
+			} else if ( a.range.start > b.range.start ) {
+				return 1;
+			}
+			return 0;
 		});
 		Object.freeze(this);
 		Object.freeze(this.list);
