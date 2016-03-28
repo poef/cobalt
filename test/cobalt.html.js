@@ -28,3 +28,10 @@ tap.test('render-insert', function(t) {
     t.equal(h, '<img id="i0"><p><img id="i1"><img id="i2">This is a test</p>', 'Renders insertions in correct order');
     t.end();
 });
+
+tap.test('render-insert', function(t) {
+    var f = cobalt.fragment('This is a test', "0-14:p\n0-9:strong\n5-14:em");
+    var h = cobalt.html.render(f);
+    t.equal(h, '<p><strong>This <em>is a</em></strong><em> test</em></p>', 'Correctly nest overlapping tags');
+    t.end();
+});

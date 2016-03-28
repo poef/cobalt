@@ -1253,11 +1253,33 @@
 	            this.tagName     = tag ? stripTag(tag) : '';
 	            this.parentNode  = parentNode;
 	            this.childNodes  = [];
-	            this.appendChild = function( tag ) {
+	            this.appendChild = function( tag )
+	            {
 	                var child = new Element(tag, this );
 	                this.childNodes.push( child );
 	                return child;
-	            }
+	            };
+	            this.removeChild = function( element )
+	            {
+	                var position = this.childNodes.indexOf(element);
+	                if (position>=0) {
+	                    this.childNodes = this.childNodes.splice(position, 1);
+	                }
+	                return element;
+	            };
+	            this.hasContents = function()
+	            {
+	                for ( var i=0,l=this.childNodes.length;i<l;i++ ) {
+	                    if ( typeof this.childNodes[i]=='string' ) {
+	                        if ( this.childNodes[i].length ) {
+	                            return true;
+	                        }
+	                    } else if ( this.childNodes[i].hasContents() ) {
+	                        return true;
+	                    }
+	                }
+	                return false;
+	            };
 	        }
 
 	        var root     = new Element();
@@ -1287,11 +1309,17 @@
 	                        }
 	                    break;
 	                    case 'end':
+	                        var hasContents = false;
 	                        while ( pointer && pointer.tagName!= entry.tagName ) {
 	                            closed.push(pointer);
 	                            pointer = pointer.parentNode;
 	                        }
 	                        if ( pointer ) {
+	                            if ( !pointer.hasContents() && pointer.parentNode ) {
+	                                // clean up empty elements
+	                                // won't clean up insert type entries, since they'll never have an 'end' entry
+	                                pointer.parentNode.removeChild(pointer);
+	                            }
 	                            pointer = pointer.parentNode;
 	                            pointer = reopenClosed(pointer, closed);
 	                        }
