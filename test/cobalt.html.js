@@ -56,3 +56,11 @@ tap.test('render-insert', function(t) {
     t.equal(h, '<p><img></p><h1>This is a test</h1>', 'Keep tags around inserted stuff');
     t.end();
 });
+
+
+tap.test('render-insert', function(t) {
+    var f = cobalt.fragment('This is a test', "0-9:p\n5-14:h1");
+    var h = cobalt.html.render(f);
+    t.equal(h, '<p>This </p><h1>is a test</h1>', 'Dont reopen passed closed tags');
+    t.end();
+});

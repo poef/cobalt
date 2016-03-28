@@ -1,22 +1,10 @@
 /*
-1 forEach annotation from list
-2a is it an insert annotation (open and close) -> put it in the insert list, else
-2b is it an open annotation -> put it in the open list, else
-2c -> put it in the close list
-
-3 forEach close annotation
-4 does it match the current parent -> push it on the close stack, set current parent to its parent
-5 repeat untill close annotations stays the same, rest is ignored
-
-6 forEach open annotation
-7 is it allowed as child from current parent -> push it on the open stack, set parent to current tag
-8 else repeat for parent (up to starting parent from 6)
-9 repeat untill open annotations stay the same, rest is ignored
-
-10 forEach insert annotation
-11 check if it is allowed as child of current parent -> insert it in the open stack (open and close)
-12 else repeat for parent (up to starting parent from 6)
-13 if not allowed, do the same for the close stack, up to parent from step 3
+TODO:
+- merge skipped and closed arrays as 'suppressed' stack.
+  skipped contains entries, closed contains nodes
+  use entries for closed as well
+- add obligatory parents/children
+  overwrite these with the correct tags/entries when available
 */
 
 module.exports = (function(self) {
@@ -49,18 +37,17 @@ module.exports = (function(self) {
     };
     rules.alltags = rules.block.concat(rules.inline);
     rules.nesting = {
-        'h1': rules.inline,
-        'h2': rules.inline,
-        'h3': rules.inline,
-        'p': rules.inline.concat(['br']),
-        'ol': ['li'],
-        'ul': ['li'],
+        'h1':         rules.inline,
+        'h2':         rules.inline,
+        'h3':         rules.inline,
+        'p':          rules.inline.concat(['br']),
+        'ol':         ['li'],
+        'ul':         ['li'],
         'blockquote': rules.alltags,
-        'br': [],
-        'em': rules.inline,
-        'strong': rules.inline,
-        'a': rules.inline.filter(function(tag) { return tag!='a'; }),
-        '_': rules.alltags
+        'br':         [],
+        'em':         rules.inline,
+        'strong':     rules.inline,
+        'a':          rules.inline.filter(function(tag) { return tag!='a'; })
     };
     rules.toplevel = rules.block.filter(function(tag) { return tag!='li';});
 
@@ -69,7 +56,7 @@ module.exports = (function(self) {
         return (typeof rules.cannotHaveChildren[tag] == 'undefined' );
     }
 
-    function canHaveChild(parent, child)
+    function canHaveChildTag(parent, child)
     {
         if ( typeof rules.nesting[parent] == 'undefined' ) {
             return true;
@@ -159,8 +146,8 @@ module.exports = (function(self) {
             var skipped = [];
             while (closed.length) {
                 var reopen = closed.pop();
-                if ( canHaveChild(pointer.tagName, reopen.tagName) ) {
-                    pointer = pointer.appendChild(reopen.tag);
+                if ( canHaveChildTag(pointer.tagName, reopen.tagName) ) {
+                    pointer = pointer.appendChild(reopen.entry);
                 } else {
                     skipped.push(reopen);
                 }
@@ -171,16 +158,17 @@ module.exports = (function(self) {
             return pointer;
         }
 
-        function Element(tag, parentNode, insertion)
+        function Element(entry, parentNode, insertion)
         {
-            this.tag         = tag;
+            this.tag         = (typeof entry != 'undefined') ? entry.tag : '';
+            this.entry       = entry;
             this.insertion   = insertion ? true : false;
-            this.tagName     = tag ? stripTag(tag) : '';
+            this.tagName     = this.tag ? stripTag(this.tag) : '';
             this.parentNode  = parentNode;
             this.childNodes  = [];
-            this.appendChild = function( tag, insertion )
+            this.appendChild = function( entry, insertion )
             {
-                var child = new Element(tag, this, insertion );
+                var child = new Element(entry, this, insertion );
                 this.childNodes.push( child );
                 return child;
             };
@@ -218,7 +206,7 @@ module.exports = (function(self) {
             var pointer = current;
             switch ( entry.type ) {
                 case 'start':
-                    while ( pointer && !canHaveChild(pointer.tagName, entry.tagName ) ) {
+                    while ( pointer && !canHaveChildTag(pointer.tagName, entry.tagName ) ) {
                         closed.push(pointer);
                         if (!pointer.hasContents() ) {
                             pointer.parentNode.removeChild(pointer);
@@ -226,7 +214,7 @@ module.exports = (function(self) {
                         pointer = pointer.parentNode;
                     }
                     if ( pointer ) {
-                        pointer = pointer.appendChild( entry.tag );
+                        pointer = pointer.appendChild( entry );
                         pointer = reopenClosed(pointer, closed);
                         current = pointer;
                     } else {
@@ -256,11 +244,11 @@ module.exports = (function(self) {
                     }
                 break;
                 case 'insert':
-                    while ( pointer && !canHaveChild(pointer.tagName, entry.tagName) ) {
+                    while ( pointer && !canHaveChildTag(pointer.tagName, entry.tagName) ) {
                         pointer = pointer.parentNode;
                     }
                     if ( pointer ) {
-                        pointer.appendChild(entry.tag, true);
+                        pointer.appendChild(entry, true);
                         pointer = null;
                     }
                 break;
@@ -268,15 +256,17 @@ module.exports = (function(self) {
         };
 
         stackedList.reduce(function(currentNode, stack) {
-            skipped = [];
             if ( stack[0].offset ) {
                 var text = fragment.text.substr(position, stack[0].offset);
                 current.childNodes.push(text);
                 position += stack[0].offset;
+                closed = closed.filter(function(el) {
+                    return (typeof el.entry != 'undefined' ) ? el.entry.end > position : false;
+                });
             }
+            skipped = [];
             stack.forEach(insertEntry);
             skipped.forEach(insertEntry);
-
             return current;
         }, rootElement);
 
