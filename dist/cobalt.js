@@ -1182,7 +1182,7 @@
 	            if (a.position > b.position) {
 	                return 1;
 	            }
-	            if ( a.type == 'start' && b.type == 'end' ) {
+	/*            if ( a.type == 'start' && b.type == 'end' ) {
 	                return 1;
 	            }
 	            if ( a.type == 'end' && b.type == 'start' ) {
@@ -1200,7 +1200,7 @@
 	            if ( a.type == 'end' && a.start > b.start ) {
 	                return -1;
 	            }
-	            return 0;
+	*/            return 0;
 	        });
 	        list.reduce(function(position, entry) {
 	            entry.offset = entry.position - position;
@@ -1228,10 +1228,6 @@
 	    function getDomTree(fragment)
 	    {
 
-	        function removeEmptyNodes(node) {
-	            return node;
-	        }
-
 	        function reopenClosed(pointer, closed) {
 	            var skipped = [];
 	            while (closed.length) {
@@ -1248,7 +1244,8 @@
 	            return pointer;
 	        }
 
-	        function Element(tag, parentNode) {
+	        function Element(tag, parentNode)
+	        {
 	            this.tag         = tag;
 	            this.tagName     = tag ? stripTag(tag) : '';
 	            this.parentNode  = parentNode;
@@ -1263,7 +1260,7 @@
 	            {
 	                var position = this.childNodes.indexOf(element);
 	                if (position>=0) {
-	                    this.childNodes = this.childNodes.splice(position, 1);
+	                    this.childNodes.splice(position, 1);
 	                }
 	                return element;
 	            };
@@ -1282,72 +1279,77 @@
 	            };
 	        }
 
-	        var root     = new Element();
-	        var current  = root;
-	        var position = 0;
+	        var skipped     = [];
+	        var rootElement = new Element();
+	        var current     = rootElement;
+	        var position    = 0;
 	        var stackedList = getStackedList(fragment.annotations);
 
+	        function insertEntry(entry) {
+	            var pointer = current;
+	            var closed  = [];
+	            switch ( entry.type ) {
+	                case 'start':
+	                    while ( pointer && !canHaveChild(pointer.tagName, entry.tagName ) ) {
+	                        closed.push(pointer);
+	                        pointer = pointer.parentNode;
+	                    }
+	                    if ( pointer ) {
+	                        pointer = pointer.appendChild( entry.tag );
+	                        pointer = reopenClosed(pointer, closed);
+	                        current = pointer;
+	                    } else {
+	                        skipped.push(entry);
+	                    }
+	                break;
+	                case 'end':
+	                    var hasContents = false;
+	                    while ( pointer && pointer.tagName!= entry.tagName ) {
+	                        closed.push(pointer);
+	                        pointer = pointer.parentNode;
+	                    }
+	                    if ( pointer ) {
+	                        if ( !pointer.hasContents() && pointer.parentNode ) {
+	                            // clean up empty elements
+	                            // won't clean up insert type entries, since they'll never have an 'end' entry
+	                            pointer.parentNode.removeChild(pointer);
+	                        }
+	                        pointer = pointer.parentNode;
+	                        pointer = reopenClosed(pointer, closed);
+	                        current = pointer;
+	                    } else {
+	                        skipped.push(entry);
+	                    }
+	                break;
+	                case 'insert':
+	                    while ( pointer && !canHaveChild(pointer.tagName, entry.tagName) ) {
+	                        pointer = pointer.parentNode;
+	                    }
+	                    if ( pointer ) {
+	                        pointer.appendChild(entry.tag);
+	                        pointer = null;
+	                    }
+	                break;
+	            }
+	        };
+
 	        stackedList.reduce(function(currentNode, stack) {
-	            var skipped = [];
+	            skipped = [];
 	            if ( stack[0].offset ) {
 	                var text = fragment.text.substr(position, stack[0].offset);
 	                current.childNodes.push(text);
 	                position += stack[0].offset;
 	            }
-	            stack.forEach(function(entry) {
-	                var pointer = current;
-	                var closed  = [];
-	                switch ( entry.type ) {
-	                    case 'start':
-	                        while ( pointer && !canHaveChild(pointer.tagName, entry.tagName ) ) {
-	                            closed.push(pointer);
-	                            pointer = pointer.parentNode;
-	                        }
-	                        if ( pointer ) {
-	                            pointer = pointer.appendChild( entry.tag );
-	                            pointer = reopenClosed(pointer, closed);
-	                        }
-	                    break;
-	                    case 'end':
-	                        var hasContents = false;
-	                        while ( pointer && pointer.tagName!= entry.tagName ) {
-	                            closed.push(pointer);
-	                            pointer = pointer.parentNode;
-	                        }
-	                        if ( pointer ) {
-	                            if ( !pointer.hasContents() && pointer.parentNode ) {
-	                                // clean up empty elements
-	                                // won't clean up insert type entries, since they'll never have an 'end' entry
-	                                pointer.parentNode.removeChild(pointer);
-	                            }
-	                            pointer = pointer.parentNode;
-	                            pointer = reopenClosed(pointer, closed);
-	                        }
-	                    break;
-	                    case 'insert':
-	                        while ( pointer && !canHaveChild(pointer.tagName, entry.tagName) ) {
-	                            pointer = pointer.parentNode;
-	                        }
-	                        if ( pointer ) {
-	                            pointer.appendChild(entry.tag);
-	                            pointer = null;
-	                        }
-	                    break;
-	                }
-	                if (pointer) {
-	                    current = pointer;
-	                } else {
-	                    skipped.push(entry);
-	                }
-	            });
+	            stack.forEach(insertEntry);
+	            skipped.forEach(insertEntry);
 	            return current;
-	        }, root);
+	        }, rootElement);
+
 	        if ( position < fragment.text.length ) {
 	            var text = fragment.text.substr(position);
-	            root.childNodes.push(text);
+	            rootElement.childNodes.push(text);
 	        }
-	        removeEmptyNodes(root);
-	        return root;
+	        return rootElement;
 	    };
 
 	    function escapeHTML(text) {
