@@ -10,6 +10,27 @@ tap.test('create', function(t) {
 	t.end();
 });
 
+tap.test('Illegal', function(t) {
+    var range = cobalt.range(10, 5);
+    t.equal(range.start, 10);
+    t.equal(range.end, 10);
+    t.end();
+});
+
+tap.test('IllegalNegative', function(t) {
+    var range = cobalt.range(-10, 5);
+    t.equal(range.start, 0);
+    t.equal(range.end, 5);
+    t.end();
+});
+
+tap.test('IllegalNegative', function(t) {
+    var range = cobalt.range(-10, -5);
+    t.equal(range.start, 0);
+    t.equal(range.end, 0);
+    t.end();
+});
+
 tap.test('Immutable',function(t) {
     var range1 = cobalt.range(5,20);
     var exception = 0;

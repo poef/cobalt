@@ -92,9 +92,9 @@
 		 * Internal range type that has only a start and end position.
 		 */
 		function SingleRange(s,e) {
-			this.type = 'cobaltSingleRange';
-			this.start = s >= 0 ? s : 0;
-			this.end = e >= this.start ? e : this.start;
+			this.type  = 'cobaltSingleRange';
+			this.start = Math.max(0, s);
+			this.end   = Math.max(this.start, e);
 			Object.freeze(this);
 		}
 
@@ -355,6 +355,8 @@
 			 * All parts that overlap with r are removed ( not cut ).
 			 */
 			exclude: function(r) {
+				//TODO: refactor this method to use more highlevel functions
+				//and less code in this method itself.
 				r = cobalt.range(r);
 				var workstack = this.ranges.slice();
 				workstack.reverse();
@@ -708,7 +710,7 @@
 		}
 
 		function parseAnnotations(annotations) {
-			var reMarkupLine = /^(?:(([0-9]+\-[0-9]+)(,[0-9]+\-[0-9]+)*))?:(.*)$/m;
+			var reMarkupLine = /^(?:(([0-9]+\-[0-9]+)(,[0-9]+\-[0-9]+)*)):(.*)$/m;
 			var matches = [];
 			var list = [];
 			while ( annotations && ( matches = annotations.match(reMarkupLine) ) ) {
@@ -1057,6 +1059,7 @@
 	TODO:
 	- add obligatory parents/children
 	  overwrite these with the correct tags/entries when available
+	- each start/end entry must have a link to its brother entry
 	*/
 
 	module.exports = (function(self) {
@@ -1065,8 +1068,8 @@
 	     * These rules define the behaviour of the rendering as well as the editor.
 	     */
 	    var rules = {
-	        block: ['h1','h2','h3','p','ol','ul','li','blockquote','br','hr'],
-	        inline: ['em','strong','a','img'],
+	        block: ['h1','h2','h3','p','ol','ul','li','blockquote','hr'],
+	        inline: ['em','strong','a','img','br'],
 	        obligatoryChild: {
 	            'ol': ['li'],
 	            'ul': ['li']
@@ -1104,16 +1107,14 @@
 	        'h1':         rules.inline,
 	        'h2':         rules.inline,
 	        'h3':         rules.inline,
-	        'p':          rules.inline.concat(['br']),
+	        'p':          rules.inline,
 	        'ol':         ['li'],
 	        'ul':         ['li'],
 	        'blockquote': rules.alltags,
-	        'br':         [],
 	        'em':         rules.inline,
 	        'strong':     rules.inline,
 	        'a':          rules.inline.filter(function(tag) { return tag!='a'; })
 	    };
-	    rules.toplevel = rules.block.filter(function(tag) { return tag!='li';});
 
 	    /**
 	     * Returns true if the tag can have children
@@ -1148,35 +1149,42 @@
 	     * Return the first word of a tag.
 	     */
 	    function stripTag(tag) {
-	        return tag.split(' ')[0];
+	        return tag.split(' ')[0]; //FIXME: this is naive, use regexp and whitespace match
 	    }
 
 	    /**
-	     * Returns an array of entries. Each entry is either a start, end or insert entry
+	     * Returns an array of entries. Each entry is either a start, end, text or insert entry
 	     * for a single range of an annotation. The entries are sorted by character offset
-	     * position. Each entry also calculates its character offset to the previous entry.
+	     * position, then by type. Start entries come after end entries. Text entries come after all.
+	     * Each entry also calculates its character offset to the previous entry.
 	     */
-	    function getRelativeList(annotations)
+	    function getRelativeList(fragment)
 	    {
-	        if ( !annotations || !annotations.count ) { return []; }
 	        var list = [];
-	        annotations.forEach(function(annotation) {
-	            annotation.range.forEach(function(range) {
+	        var position = 0;
+	        fragment.annotations.forEach(function(annotation) {
+	            annotation.range.forEach(function(range, index) {
 	                if ( range.start != range.end ) {
-	                    list.push({
+	                    var startEntry = {
 	                        type: 'start',
+	                        index: index,
 	                        annotation: annotation,
 	                        position: range.start,
 	                        range: range,
 	                        tagName: stripTag(annotation.tag)
-	                    });
-	                    list.push({
+	                    };
+	                    var endEntry = {
 	                        type: 'end',
 	                        annotation: annotation,
+	                        index: index,
 	                        position: range.end,
 	                        range: range,
-	                        tagName: stripTag(annotation.tag)
-	                    });
+	                        tagName: stripTag(annotation.tag),
+	                        startEntry: startEntry
+	                    };
+	                    startEntry.endEntry = endEntry;
+	                    list.push(startEntry);
+	                    list.push(endEntry);
 	                } else {
 	                    /*
 	                        annotations which have the same start and end position
@@ -1186,6 +1194,7 @@
 	                    list.push({
 	                        type: 'insert',
 	                        annotation: annotation,
+	                        index: index,
 	                        position: range.start,
 	                        range: range,
 	                        tagName: stripTag(annotation.tag)
@@ -1194,42 +1203,56 @@
 	            });
 	        });
 	        list.sort(function(a,b) {
+	            // first sort by position
 	            if (a.position < b.position) {
 	                return -1;
 	            }
 	            if (a.position > b.position) {
 	                return 1;
 	            }
+	            // position identical
+	            // text entries are always pushed back
+	            if (a.type == 'text') {
+	                return 1;
+	            }
+	            // start entries pushed after end entries
+	            if (a.type == 'start' && b.type == 'end' ) {
+	                return 1;
+	            }
+	            if (a.type == 'end' && b.type == 'start' ) {
+	                return -1;
+	            }
 	            return 0;
 	        });
-	        list.reduce(function(position, entry) {
-	            entry.offset = entry.position - position;
-	            delete entry.position;
-	            return position + entry.offset;
-	        }, 0);
-	        return list;
-	    }
-
-	    /**
-	     * Turns a list of annotations in a list of tag stacks, stackedList.
-	     * Each tag stack corresponds with a unique character position.
-	     * The stackList is sorted by character position.
-	     */
-	    function getStackedList(annotations)
-	    {
-	        var relativeList = getRelativeList(annotations);
-
-	        var stackedList = [];
-	        stackedList.push([]);
-	        relativeList.forEach(function(entry) {
-	            if ( entry.offset != 0 ) {
-	                stackedList.push([]);
+	        var position = 0;
+	        var contentList = [];
+	        list.forEach(function(el) {
+	            if ( el.position>position ) {
+	                contentList.push({
+	                    type: 'text',
+	                    position: position,
+	                    content: fragment.text.substr( position, el.position-position )
+	                });
 	            }
-	            stackedList[ stackedList.length-1 ].push(entry);
+	            contentList.push(el);
+	            position = el.position;
 	        });
-	        return stackedList;
+	        if ( position < fragment.text.length ) {
+	            contentList.push({
+	                type: 'text',
+	                position: end,
+	                content: fragment.text.substr( end )
+	            });
+	        }
+	        // position was only needed for sorting, no longer needed
+	        // if the contentList gets changed, this property will become incorrect
+	        // FIXME: same thing is true for the range attribute, but it is
+	        // used at the moment to build the dom tree in correct order
+	        contentList.forEach(function(entry) {
+	            delete entry.position;
+	        });
+	        return contentList;
 	    }
-
 
 	    /**
 	     * This returns a tree of nested elements, given a fragment
@@ -1249,30 +1272,75 @@
 	        var position    = 0;
 
 	        /* get a list with start/end/insert entry stack for each position where there is at least one entry */
-	        var stackedList = getStackedList(fragment.annotations);
+	        var relativeList = getRelativeList(fragment);
+
+	        function positionThenIndex(a,b) {
+	            if (a.position < b.position) {
+	                return -1;
+	            }
+	            if (a.position > b.position) {
+	                return 1;
+	            }
+	            if (a.index < b.index) {
+	                return -1;
+	            }
+	            return 1;
+	        }
 
 	        /**
 	         * This method tries to express any entry that was suppressed
 	         * It also removes entries that are not relevant any more (their end position has been passed)
 	         */
-	        function tryOpenSuppressed(pointer) {
+	        function tryToOpen(suppressed, pointer) {
 	            var skipped = [];
+	            suppressed.sort(positionThenIndex);
 	            while (suppressed.length) {
-	                var open = suppressed.pop();
-	                if ( open.range.end > position ) {
-	                    if ( canHaveChildTag(pointer.tagName, open.tagName) ) {
-	                        pointer = pointer.appendChild(open);
+	                var entry = suppressed.pop();
+	                if ( entry.range.end > position ) {
+	                    if ( childAllowed(pointer, entry.tagName) ) {
+	                        pointer = pointer.appendChild(entry);
 	                    } else {
-	                        skipped.push(open);
+	                        skipped.push(entry);
 	                    }
 	                }
 	            }
-	            while ( skipped.length ) {
-	                suppressed.push(skipped.pop());
+	            if (skipped.length) {
+	                while ( skipped.length ) {
+	                    suppressed.push(skipped.pop());
+	                }
+	                suppressed.sort(positionThenIndex);
 	            }
 	            return pointer;
 	        }
 
+	        /**
+	         * appends valid children from the suppressed stack
+	         * so that entry always appears in it
+	         * prerequisite: node must allow entry directly
+	         */
+	        function appendValidEntries(node, suppressed, entry) {
+	            var closed = [];
+	            while ( suppressed.length && !canHaveChildTag(suppressed[0].tagName, entry.tagName) ) {
+	                closed.push(suppressed.shift());
+	            }
+	            while ( suppressed.length && canHaveChildTag(suppressed[0].tagName, entry.tagName) ) {
+	                node = node.appendChild(suppressed.shift());
+	            }
+	            node = node.appendChild(entry);
+	            while (closed.length) {
+	                suppressed.unshift(closed.pop());
+	            }
+	            return node;
+	        }
+
+	        function isSuppressed(suppressed, entry) {
+	            for ( var i=0,l=suppressed.length; i<l; i++ ) {
+	                if ( suppressed[i].annotation == entry.annotation ) {
+	                    return true;
+	                }
+	            }
+	            return false;
+	        }
 
 	        /**
 	         * This implements a very basic domElement. It references the entry
@@ -1336,10 +1404,13 @@
 	         * Any nodes passed when 'walking' up the tree, will also be pushed on the suppressed stack
 	         * After each succesful start/end entry, all entries in the suppressed stack will be tried again.
 	         */
-	        function insertEntry(entry)
+	        function insertEntry(current, entry)
 	        {
 	            var pointer = current;
 	            switch ( entry.type ) {
+	                case 'text':
+	                    pointer.childNodes.push(entry.content);
+	                break;
 	                case 'start':
 	                    while ( pointer && !childAllowed(pointer, entry.tagName) ) {
 	                        if ( pointer != rootElement ) {
@@ -1351,14 +1422,27 @@
 	                        pointer = pointer.parentNode;
 	                    }
 	                    if ( pointer ) {
-	                        pointer = pointer.appendChild( entry );
-	                        pointer = tryOpenSuppressed(pointer);
+	                        // this forces entry to be appended, as well as as much of
+	                        // the suppressed list as parent of entry as possible
+	                        pointer = appendValidEntries(pointer, suppressed, entry);
+	                        // then whatever remains suppressed is appended if possible
+	                        pointer = tryToOpen(suppressed, pointer);
 	                        current = pointer;
 	                    } else {
+	                        // this entry cannot be rendered to html here,
+	                        // so push it on the suppressed list to try later
+	                        // FIXME: is this correct? root element should allow any tag
+	                        // so a start is always successfull and can only later be removed
 	                        suppressed.push(entry);
 	                    }
 	                break;
 	                case 'end':
+	                    if ( isSuppressed(suppressed, entry) ) {
+	                        suppressed = suppressed.filter(function(suppressedEntry) {
+	                            return suppressedEntry.annotation!=entry.annotation;
+	                        });
+	                        break;
+	                    }
 	                    var hasContents = false;
 	                    while ( pointer && pointer.entry && pointer.entry.annotation != entry.annotation ) {
 	                        if ( pointer != rootElement ) {
@@ -1376,10 +1460,8 @@
 	                            pointer.parentNode.removeChild(pointer);
 	                        }
 	                        pointer = pointer.parentNode;
-	                        pointer = tryOpenSuppressed(pointer);
+	                        pointer = tryToOpen(suppressed,pointer);
 	                        current = pointer;
-	                    } else {
-	                        suppressed.push(entry);
 	                    }
 	                break;
 	                case 'insert':
@@ -1388,36 +1470,13 @@
 	                    }
 	                    if ( pointer ) {
 	                        pointer.appendChild(entry, true);
-	                        pointer = null;
 	                    }
 	                break;
 	            }
+	            return current;
 	        };
 
-	        /*
-	        Try to apply each entry to the dom tree. When the position moves,
-	        add a text node with the correct content. Also filter the suppressed
-	        stack to remove passed entries.
-	        */
-	        stackedList.reduce(function(currentNode, stack) {
-	            if ( stack[0].offset ) {
-	                var text = fragment.text.substr(position, stack[0].offset);
-	                current.childNodes.push(text);
-	                position += stack[0].offset;
-	                suppressed = suppressed.filter(function(entry) {
-	                    return entry.range.end > position;
-	                });
-	            }
-	            stack.forEach(insertEntry);
-	            //skipped.forEach(insertEntry);
-	            return current;
-	        }, rootElement);
-
-	        // add the remainder of the text, if available.
-	        if ( position < fragment.text.length ) {
-	            var text = fragment.text.substr(position);
-	            rootElement.childNodes.push(text);
-	        }
+	        relativeList.reduce(insertEntry, rootElement);
 
 	        return rootElement;
 	    };
@@ -1463,6 +1522,10 @@
 	    self.render = function(fragment) {
 	        var root = getDomTree(fragment);
 	        return renderElement(root);
+	    }
+
+	    self.parse  = function(html) {
+	        // do stuff
 	    }
 
 	    return self;

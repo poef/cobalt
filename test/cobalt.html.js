@@ -64,9 +64,30 @@ tap.test('keep-closed', function(t) {
     t.end();
 });
 
+tap.test('render-directly-nested-anchors', function(t) {
+    var f = cobalt.fragment('This is a test', "0-14:a\n5-10:a");
+    var h = cobalt.html.render(f);
+    t.equal(h, '<a>This </a><a>is a </a><a>test</a>', 'Dont directly nest anchor tags');
+    t.end();
+});
+
+tap.test('render-directly-nested-anchors-with-classes', function(t) {
+    var f = cobalt.fragment('This is a test', '0-14:a class="foo"\n5-10:a class="bar"');
+    var h = cobalt.html.render(f);
+    t.equal(h, '<a class="foo">This </a><a class="bar">is a </a><a class="foo">test</a>', 'Dont directly nest anchor tags 2');
+    t.end();
+});
+
 tap.test('render-nested-anchors', function(t) {
     var f = cobalt.fragment('This is a test', "0-14:a\n0-14:strong\n5-10:a");
     var h = cobalt.html.render(f);
-    t.equal(h, '<a><strong>This </strong></a><a><strong>is a </strong></a><strong><a>test</a></strong>', 'Dont nest anchor tags');
+    t.equal(h, '<a><strong>This </strong></a><strong><a>is a </a><a>test</a></strong>', 'Dont nest anchor tags at all');
+    t.end();
+});
+
+tap.test('render-nested-anchors', function(t) {
+    var f = cobalt.fragment('This is a test', "0-14:strong\n0-14:a\n5-10:a\n");
+    var h = cobalt.html.render(f);
+    t.equal(h, '<strong><a>This </a><a>is a </a><a>test</a></strong>', 'Order influences open/close tags');
     t.end();
 });
