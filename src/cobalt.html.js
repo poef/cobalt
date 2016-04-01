@@ -42,7 +42,6 @@ module.exports = (function(self) {
         },
         specialRules: {
             'a': function(node) {
-                //FIXME: should add a way to render overlapping anchors in an alternative way
                 do {
                     if (node.tagName && node.tagName=='a') {
                         return false;
