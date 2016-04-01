@@ -39,7 +39,7 @@ module.exports = function(text, annotations) {
 	}
 
 	function parseAnnotations(annotations) {
-		var reMarkupLine = /^(?:(([0-9]+\-[0-9]+)(,[0-9]+\-[0-9]+)*))?:(.*)$/m;
+		var reMarkupLine = /^(?:(([0-9]+\-[0-9]+)(,[0-9]+\-[0-9]+)*)):(.*)$/m;
 		var matches = [];
 		var list = [];
 		while ( annotations && ( matches = annotations.match(reMarkupLine) ) ) {
