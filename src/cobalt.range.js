@@ -13,9 +13,9 @@ module.exports = function(s,e) {
 	 * Internal range type that has only a start and end position.
 	 */
 	function SingleRange(s,e) {
-		this.type = 'cobaltSingleRange';
-		this.start = s >= 0 ? s : 0;
-		this.end = e >= this.start ? e : this.start;
+		this.type  = 'cobaltSingleRange';
+		this.start = Math.max(0, s);
+		this.end   = Math.max(this.start, e);
 		Object.freeze(this);
 	}
 
@@ -276,6 +276,8 @@ module.exports = function(s,e) {
 		 * All parts that overlap with r are removed ( not cut ).
 		 */
 		exclude: function(r) {
+			//TODO: refactor this method to use more highlevel functions
+			//and less code in this method itself.
 			r = cobalt.range(r);
 			var workstack = this.ranges.slice();
 			workstack.reverse();
