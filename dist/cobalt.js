@@ -1059,7 +1059,15 @@
 	TODO:
 	- add obligatory parents/children
 	  overwrite these with the correct tags/entries when available
-	- each start/end entry must have a link to its brother entry
+	- create a hook system that allows alternative parsing and rendering of elements
+	  e.g. when parsing html turn <button><i class="fa fa-close"></i></button> into
+	  a cobalt-html-1 element, that renders the same html again. This allows you to keep
+	  nested html elements without text content.
+	- allow the same hook system to render alternative elements when html won't allow the
+	  original.
+	  e.g. two overlapping anchors, render the overlapping part as
+	  <cobalt-anchor href="x">text</cobalt-anchor>. Which combined with some javascript
+	  allows you to render and follow overlapping links.
 	*/
 
 	module.exports = (function(self) {
@@ -1149,7 +1157,7 @@
 	     * Return the first word of a tag.
 	     */
 	    function stripTag(tag) {
-	        return tag.split(' ')[0]; //FIXME: this is naive, use regexp and whitespace match
+	        return tag.split(/\s/)[0];
 	    }
 
 	    /**
@@ -1274,26 +1282,27 @@
 	        /* get a list with start/end/insert entry stack for each position where there is at least one entry */
 	        var relativeList = getRelativeList(fragment);
 
-	        function positionThenIndex(a,b) {
-	            if (a.position < b.position) {
-	                return -1;
-	            }
-	            if (a.position > b.position) {
-	                return 1;
-	            }
-	            if (a.index < b.index) {
-	                return -1;
-	            }
-	            return 1;
-	        }
-
 	        /**
 	         * This method tries to express any entry that was suppressed
 	         * It also removes entries that are not relevant any more (their end position has been passed)
 	         */
 	        function tryToOpen(suppressed, pointer) {
+
+	            function comparePositionThenIndex(a,b) {
+	                if (a.position < b.position) {
+	                    return -1;
+	                }
+	                if (a.position > b.position) {
+	                    return 1;
+	                }
+	                if (a.index < b.index) {
+	                    return -1;
+	                }
+	                return 1;
+	            }
+
 	            var skipped = [];
-	            suppressed.sort(positionThenIndex);
+	            suppressed.sort(comparePositionThenIndex);
 	            while (suppressed.length) {
 	                var entry = suppressed.pop();
 	                if ( entry.range.end > position ) {
@@ -1308,7 +1317,7 @@
 	                while ( skipped.length ) {
 	                    suppressed.push(skipped.pop());
 	                }
-	                suppressed.sort(positionThenIndex);
+	                suppressed.sort(comparePositionThenIndex);
 	            }
 	            return pointer;
 	        }
@@ -1333,6 +1342,10 @@
 	            return node;
 	        }
 
+	        /**
+	         * returns true if the entry.annotation is present in any entry already
+	         * in the suppressed list.
+	         */
 	        function isSuppressed(suppressed, entry) {
 	            for ( var i=0,l=suppressed.length; i<l; i++ ) {
 	                if ( suppressed[i].annotation == entry.annotation ) {
@@ -1500,18 +1513,18 @@
 	        var html = '';
 	        if ( typeof element == 'string' ) {
 	            html += escapeHTML(element);
-	        } else if ( element.tagName ) { //
+	        } else if ( Array.isArray(element) ) {
+	            for (var i=0,l=element.length; i<l; i++ ) {
+	                html += renderElement(element[i]);
+	            }
+	        } else if ( element.tagName ) {
 	            html += '<'+element.entry.annotation.tag+'>';
 	            if ( canHaveChildren(element.tagName) ) {
-	                for (var i=0,l=element.childNodes.length; i<l; i++ ) {
-	                    html += renderElement(element.childNodes[i]);
-	                }
+	                html+=renderElement(element.childNodes);
 	                html += '</'+element.tagName+'>';
 	            }
 	        } else if ( typeof element.childNodes != undefined ) { // rootElement
-	            for (var i=0,l=element.childNodes.length; i<l; i++ ) {
-	                html += renderElement(element.childNodes[i]);
-	            }
+	            html += renderElement(element.childNodes);
 	        }
 	        return html;
 	    }
