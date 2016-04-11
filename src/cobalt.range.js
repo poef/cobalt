@@ -182,6 +182,8 @@ module.exports = function(s,e) {
 			});
 		} else if ( Number.isInteger(s) && Number.isInteger(e) ) {
 			this.ranges = [ new SingleRange(s,e) ];
+		} else if ( Number.isInteger(s) ) {
+			this.ranges = [ new SingleRange(s,s) ];
 		} else {
 			this.ranges = [];
 		}

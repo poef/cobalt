@@ -85,11 +85,12 @@ module.exports = function(text, annotations) {
 					tag   = range.tag;
 					range = range.range;
 				}
-				return new cobaltAnnotationList(
-					this.list.slice().push(
-						cobalt.annotation(range,tag)
-					)
+				var list = this.list.slice();
+				list.push(
+					cobalt.annotation(range,tag)
 				);
+
+				return new cobaltAnnotationList(list);
 			}
 		},
 		/**
@@ -221,7 +222,10 @@ module.exports = function(text, annotations) {
 		delete: function(annotations, range) {
 			result = [];
 			annotations.forEach(function(ann) {
-				result.push( ann.delete(range) );
+				ann = ann.delete(range);
+				if ( ann ) {
+					result.push(ann);
+				}
 			});
 			return new cobaltAnnotationList(result);
 		},
@@ -283,6 +287,7 @@ module.exports = function(text, annotations) {
 		 * Returns a new fragment where the given range is deleted (cut).
 		 */
 		delete: function( range ) {
+			range = cobalt.range(range);
 			return new cobaltFragment(
 				cobaltText.delete( this.text, range ),
 				cobaltAnnotations.delete( this.annotations, range )
@@ -294,6 +299,7 @@ module.exports = function(text, annotations) {
 		 * single text. All annotations are moved/cut to match this new text.
 		 */
 		copy: function( range ) {
+			range = cobalt.range(range);
 			return new cobaltFragment(
 				cobaltText.copy( this.text, range ),
 				cobaltAnnotations.copy(
@@ -308,19 +314,21 @@ module.exports = function(text, annotations) {
 		 * Returns a combined new fragment with the inserted fragment text and annotations
 		 * inserted at the given position.
 		 */
-		insert: function( position, fragment ) {
-			fragment = new cobaltFragment(fragment);
+		insert: function( range, fragment ) {
+			range = cobalt.range(range);
+			fragment = new cobaltFragment(fragment).delete(range);
 			return new cobaltFragment(
-				cobaltText.insert( this.text, fragment.text, position ),
+				cobaltText.insert( this.text, fragment.text, range.start ),
 				cobaltAnnotations
-				.insert( this.annotations, position, fragment.text.length )
-				.apply( annotations.insert( fragment.annotations, 0, position ) )
+				.insert( this.annotations, range.start, fragment.text.length )
+				.apply( cobaltAnnotations.insert( fragment.annotations, 0, range.start ) )
 			);
 		},
 		/**
 		 * Returns a new range, with the given range/tag or annotation or annotationlist applied
 		 */
 		apply: function( range, tag ) {
+			range = cobalt.range(range);
 			return new cobaltFragment(
 				this.text,
 				this.annotations.apply( range, tag )
@@ -330,6 +338,7 @@ module.exports = function(text, annotations) {
 		 * Returns a new range, with the given range/tag or annotation or annotationlist removed
 		 */
 		remove: function( range, tag ) {
+			range = cobalt.range(range);
 			return new cobaltFragment(
 				this.text,
 				this.annotations.remove( range, tag )

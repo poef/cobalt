@@ -33,7 +33,7 @@ module.exports = (function(self) {
 				headers[i] = temp[i];
 			}
 			var returns = message.match(/^\r?\n|\r/);
-			if ( returns[0] ) {
+			if ( returns && typeof returns[0] != 'undefined') {
 				message = message.substring( returns[0].length );
 			}
 		}
@@ -69,7 +69,7 @@ module.exports = (function(self) {
 				parsed.message = message;
 			}
 			while ( part = parts.shift() ) {
-				parsed.parts.push( self.decode(part) );		
+				parsed.parts.push( self.decode(part) );
 			}
 		}
 		return parsed;
@@ -77,4 +77,4 @@ module.exports = (function(self) {
 
 	return self;
 
-});
+})(cobalt.mime || {});

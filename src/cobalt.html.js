@@ -190,8 +190,8 @@ module.exports = (function(self) {
         if ( position < fragment.text.length ) {
             contentList.push({
                 type: 'text',
-                position: end,
-                content: fragment.text.substr( end )
+                position: position,
+                content: fragment.text.substr( position )
             });
         }
         // position was only needed for sorting, no longer needed

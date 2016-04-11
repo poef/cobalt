@@ -261,6 +261,8 @@
 				});
 			} else if ( Number.isInteger(s) && Number.isInteger(e) ) {
 				this.ranges = [ new SingleRange(s,e) ];
+			} else if ( Number.isInteger(s) ) {
+				this.ranges = [ new SingleRange(s,s) ];
 			} else {
 				this.ranges = [];
 			}
@@ -492,7 +494,8 @@
 		 * Fast trim algorithm (trim19) from
 		 * https://yesudeep.wordpress.com/2009/07/31/even-faster-string-prototype-trim-implementation-in-javascript/
 		 */
-		function trim(str) {
+		function trim(str)
+		{
 			var str = str.replace(/^\s\s*/, ''),
 				ws = /\s/,
 				i = str.length;
@@ -500,10 +503,106 @@
 			return str.slice(0, i + 1);
 		}
 
-		function Annotation(range, tag) {
+	/*
+		function parseClasses(className) {
+			return className.split(/\s+/);
+		}
+
+		function removeQuotes(s) {
+			if (!s) {
+				return s;
+			}
+			s = trim(s);
+			if ( s[0]=='"' || s[0]=="'") {
+				return s.substr(1,-1);
+			}
+			return s;
+		}
+
+		function classList()
+		{
+			this.classes = {};
+			this.add(arguments);
+		}
+
+		classList.prototype = {
+			constructor: classList,
+			add: function()
+			{
+				for ( var i=0, l=arguments.length; i<l; i++ ) {
+					var className = getClassName(arguments[i]);
+					if ( className ) {
+						this.classes[className] = true;
+					}
+				}
+			},
+			remove: function()
+			{
+				for ( var i=0,l=arguments.length; i<l; i++ ) {
+					var className = getClassName(arguments[i]);
+					if ( className ) {
+						delete this.classes[className];
+					}
+				}
+			},
+			item: function(index)
+			{
+				return Object.keys(this.classes)[index];
+			},
+			toggle: function(className, force)
+			{
+				className = getClassName(className);
+				if (className) {
+					if ( force===false || (force!=true && typeof this.classes[className] != undefined) ) {
+						delete this.classes[className];
+					} else {
+						this.classes[className] = true;
+					}
+				}
+			},
+			contains: function(className)
+			{
+				className = getClassName(className)
+				return (className && typeof this.classes[className]!=undefined);
+			}
+		}
+	*/
+		function Annotation(range, tag)
+		{
 			this.type  = 'cobaltAnnotation';
 			this.range = cobalt.range(range);
 			this.tag   = trim(tag);
+			var elements = trim(tag).split(/\s/);
+			this.tagName = elements.shift().toLowerCase();
+
+	/*		this.attributes = {
+				get id () {
+					return this.id;
+				},
+				get className () {
+					return this.classListe.join(' ');
+				}
+			};
+			elements.forEach(function(el) {
+	            var nameValuePair = el.split('=',1);
+	            switch(nameValuePair[0]) {
+	                case 'class':
+	                    if ( typeof nameValuePair[1] != undefined ) {
+	                        this.classList = parseClasses(nameValuePair[1]);
+	                    }
+	                break;
+	                case 'id':
+	                    if ( typeof nameValuePair[1] != undefined ) {
+	                        this.id = nameValuePair[1];
+	                    }
+	                break;
+	                default:
+	                    // check if name starts with 'data-'
+	                    this.attributes[nameValuePair[0]] = removeQuotes(nameValuePair[1]);
+	                break;
+	            }
+			});
+	*/
 			Object.freeze(this);
 		}
 
@@ -619,7 +718,7 @@
 					headers[i] = temp[i];
 				}
 				var returns = message.match(/^\r?\n|\r/);
-				if ( returns[0] ) {
+				if ( returns && typeof returns[0] != 'undefined') {
 					message = message.substring( returns[0].length );
 				}
 			}
@@ -655,7 +754,7 @@
 					parsed.message = message;
 				}
 				while ( part = parts.shift() ) {
-					parsed.parts.push( self.decode(part) );		
+					parsed.parts.push( self.decode(part) );
 				}
 			}
 			return parsed;
@@ -663,7 +762,7 @@
 
 		return self;
 
-	});
+	})(cobalt.mime || {});
 
 /***/ },
 /* 4 */
@@ -756,11 +855,12 @@
 						tag   = range.tag;
 						range = range.range;
 					}
-					return new cobaltAnnotationList(
-						this.list.slice().push(
-							cobalt.annotation(range,tag)
-						)
+					var list = this.list.slice();
+					list.push(
+						cobalt.annotation(range,tag)
 					);
+
+					return new cobaltAnnotationList(list);
 				}
 			},
 			/**
@@ -892,7 +992,10 @@
 			delete: function(annotations, range) {
 				result = [];
 				annotations.forEach(function(ann) {
-					result.push( ann.delete(range) );
+					ann = ann.delete(range);
+					if ( ann ) {
+						result.push(ann);
+					}
 				});
 				return new cobaltAnnotationList(result);
 			},
@@ -954,6 +1057,7 @@
 			 * Returns a new fragment where the given range is deleted (cut).
 			 */
 			delete: function( range ) {
+				range = cobalt.range(range);
 				return new cobaltFragment(
 					cobaltText.delete( this.text, range ),
 					cobaltAnnotations.delete( this.annotations, range )
@@ -965,6 +1069,7 @@
 			 * single text. All annotations are moved/cut to match this new text.
 			 */
 			copy: function( range ) {
+				range = cobalt.range(range);
 				return new cobaltFragment(
 					cobaltText.copy( this.text, range ),
 					cobaltAnnotations.copy(
@@ -979,19 +1084,21 @@
 			 * Returns a combined new fragment with the inserted fragment text and annotations
 			 * inserted at the given position.
 			 */
-			insert: function( position, fragment ) {
-				fragment = new cobaltFragment(fragment);
+			insert: function( range, fragment ) {
+				range = cobalt.range(range);
+				fragment = new cobaltFragment(fragment).delete(range);
 				return new cobaltFragment(
-					cobaltText.insert( this.text, fragment.text, position ),
+					cobaltText.insert( this.text, fragment.text, range.start ),
 					cobaltAnnotations
-					.insert( this.annotations, position, fragment.text.length )
-					.apply( annotations.insert( fragment.annotations, 0, position ) )
+					.insert( this.annotations, range.start, fragment.text.length )
+					.apply( cobaltAnnotations.insert( fragment.annotations, 0, range.start ) )
 				);
 			},
 			/**
 			 * Returns a new range, with the given range/tag or annotation or annotationlist applied
 			 */
 			apply: function( range, tag ) {
+				range = cobalt.range(range);
 				return new cobaltFragment(
 					this.text,
 					this.annotations.apply( range, tag )
@@ -1001,6 +1108,7 @@
 			 * Returns a new range, with the given range/tag or annotation or annotationlist removed
 			 */
 			remove: function( range, tag ) {
+				range = cobalt.range(range);
 				return new cobaltFragment(
 					this.text,
 					this.annotations.remove( range, tag )
@@ -1099,7 +1207,6 @@
 	        },
 	        specialRules: {
 	            'a': function(node) {
-	                //FIXME: should add a way to render overlapping anchors in an alternative way
 	                do {
 	                    if (node.tagName && node.tagName=='a') {
 	                        return false;
@@ -1248,8 +1355,8 @@
 	        if ( position < fragment.text.length ) {
 	            contentList.push({
 	                type: 'text',
-	                position: end,
-	                content: fragment.text.substr( end )
+	                position: position,
+	                content: fragment.text.substr( position )
 	            });
 	        }
 	        // position was only needed for sorting, no longer needed

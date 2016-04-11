@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+    <title>Cobalt Editor</title>
+    <script type="text/javascript" src="../dist/cobalt.js"></script>
+    <script type="text/javascript" src="../dist/cobalt.editor.js"></script>
+    <style type="text/css">
+        body {
+            padding-top: 60px;
+            line-height: 1.5em;
+        }
+        .cobalt-cursor {
+            position: absolute;
+            border-left: 1px solid transparent;
+            width: 1px;
+            height: 1.5em;
+            overflow: hidden;
+            -webkit-animation: blinkempty 1s infinite;
+            animation: blinkempty 1s infinite;
+        }
+        @-webkit-keyframes blinkempty {
+            0% { border-left-color: #333; }
+            59% { border-left-color: #333; }
+            60% { border-left-color: transparent; }
+            99% { border-left-color: transparent; }
+        }
+        @keyframes blinkempty {
+            0% { border-left-color: #333; }
+            59% { border-left-color: #333; }
+            60% { border-left-color: transparent; }
+            99% { border-left-color: transparent; }
+        }
+        .cobalt-selection, .cobalt-selection a {
+            font-style: normal;
+            color: white;
+            background-color: rgb(0,122,255);
+            line-height: 1.5em;
+            display: inline;
+        }
+        #editor {
+            background: #EEE;
+            border-radius: 3px;
+            width: auto;
+            min-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="editor" tabindex=1>
+    </div>
+    <pre id="debug">
+    </pre>
+    <script type="text/javascript">
+        var editor = cobalt.editor.create( '#editor', '#debug');
+        editor.focus();
+    </script>
+</body>
+</html>

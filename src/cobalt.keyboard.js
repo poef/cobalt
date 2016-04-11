@@ -1,4 +1,4 @@
-cobalt.keyboard = (function(self) {
+module.exports = (function(self) {
 
 	var keyCodes = [];
 	keyCodes[3]  = 'Cancel';
@@ -57,7 +57,7 @@ cobalt.keyboard = (function(self) {
 	keyCodes[106] = '*'; // keypad
 	keyCodes[107] = '+'; // keypad
 	keyCodes[109] = '-'; // keypad
-	keyCodes[110] = 'Separator'; 
+	keyCodes[110] = 'Separator';
 	keyCodes[111] = '/'; // keypad
 
 	keyCodes[144] = 'NumLock';
@@ -133,9 +133,9 @@ cobalt.keyboard = (function(self) {
 				return 'Spacebar';
 			case 'Esc' :
 				return 'Escape';
-			case 'Left' : 
+			case 'Left' :
 			case 'Up' :
-			case 'Right' : 
+			case 'Right' :
 			case 'Down' :
 				return 'Arrow'+key;
 			case 'Del' :
@@ -154,7 +154,7 @@ cobalt.keyboard = (function(self) {
 				return 'ZoomToggle';
 			case 'Multiply' :
 				return '*';
-			case 'Add' : 
+			case 'Add' :
 				return '+';
 			case 'Subtract' :
 				return '-';
@@ -169,7 +169,7 @@ cobalt.keyboard = (function(self) {
 		}
 	}
 
-	this.getKey = function( evt ) {
+	self.getKey = function( evt ) {
 		var keyInfo = '';
 		if ( evt.ctrlKey && evt.keyCode != 17 ) {
 			keyInfo += 'Control+';
@@ -199,7 +199,7 @@ cobalt.keyboard = (function(self) {
 		return keyInfo;
 	}
 
-	this.listen = function( el, key, callback, capture ) {
+	self.listen = function( el, key, callback, capture ) {
 		return el.addEventListener('keydown', function(evt) {
 			var  pressedKey = self.getKey( evt );
 			if ( key == pressedKey ) {
@@ -208,4 +208,12 @@ cobalt.keyboard = (function(self) {
 		}, capture);
 	}
 
+	self.getCharacter = function(evt) {
+		evt = evt || window.event;
+	    var charCode = evt.which || evt.keyCode;
+    	var charTyped = String.fromCharCode(charCode);
+    	return charTyped;
+	}
+
+	return self;
 } )( cobalt.keyboard || {} );
