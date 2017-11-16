@@ -316,11 +316,12 @@ module.exports = function(text, annotations) {
 		 */
 		insert: function( range, fragment ) {
 			range = cobalt.range(range);
-			fragment = new cobaltFragment(fragment).delete(range);
+            fragment = new cobaltFragment(fragment);
+			result = this.delete(range);
 			return new cobaltFragment(
-				cobaltText.insert( this.text, fragment.text, range.start ),
+				cobaltText.insert( result.text, fragment.text, range.start ),
 				cobaltAnnotations
-				.insert( this.annotations, range.start, fragment.text.length )
+				.insert( result.annotations, range.start, fragment.text.length )
 				.apply( cobaltAnnotations.insert( fragment.annotations, 0, range.start ) )
 			);
 		},

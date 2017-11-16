@@ -210,9 +210,9 @@ module.exports = (function(self) {
 
 	self.getCharacter = function(evt) {
 		evt = evt || window.event;
-	    var charCode = evt.which || evt.keyCode;
-    	var charTyped = String.fromCharCode(charCode);
-    	return charTyped;
+		if ( evt.which!==0 && !evt.ctrlKey && !evt.metaKey && !evt.altKey ) {
+    		return String.fromCharCode(evt.which);
+    	}
 	}
 
 	return self;

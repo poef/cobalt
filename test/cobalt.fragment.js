@@ -7,3 +7,17 @@ tap.test('create', function(t) {
     t.equal(''+f.annotations, '0-14:div class="test"', 'cobalt.fragment annotations should be unchanged');
 	t.end();
 });
+
+tap.test('delete',function(t) {
+	var f = cobalt.fragment('abcd','');
+	f = f.delete([1,3]);
+	t.equal(''+f.text, 'ad');
+	t.end();
+});
+
+tap.test('insert', function(t) {
+	var f = cobalt.fragment('abcd','');
+	f = f.insert([1,3],"x");
+	t.equal(''+f.text, 'axd');
+	t.end();
+});
