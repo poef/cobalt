@@ -113,10 +113,19 @@ tap.test('Exclude', function(t) {
     var r = cobalt.range([[5,10],[15,20]]);
     s = r.exclude( cobalt.range([[3,7],[17,22]]));
     t.equal(''+s, '7-10,15-17');
+    var r = cobalt.range([[0,1],[5,6]]);
+    s = r.exclude( cobalt.range(0,6) );
+    t.equal(''+s, '');
+    var r = cobalt.range([0,30]);
+    var s = r.exclude([[5,10],[15,20]])
+	t.equal(''+s, '0-5,10-15,20-30');
     t.end();
 });
 
 tap.test('Invert', function(t) {
+	var r = cobalt.range([5,10]);
+	var s = r.invert(15);
+	t.equal(''+s, '0-5,10-15');
     var r = cobalt.range([[5,10],[15,20]]);
     var s = r.invert(30);
     t.equal(''+s, '0-5,10-15,20-30');
@@ -135,5 +144,12 @@ tap.test('Join', function(t) {
     var r1 = cobalt.range([[5,10],[15,20]]);
     var s = r1.join([8,12]);
     t.equal(''+s, '5-12,15-20');
+    t.end();
+});
+
+tap.test('JoinAdjoined', function(t) {
+    var r1 = cobalt.range([5,10]);
+    var s = r1.join([10,15]);
+    t.equal(''+s, '5-15');
     t.end();
 });

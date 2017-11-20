@@ -21,3 +21,9 @@ tap.test('insert', function(t) {
 	t.equal(''+f.text, 'axd');
 	t.end();
 });
+
+tap.test('has', function(t) {
+	var f = cobalt.fragment('abcd', '1-3:strong');
+	t.equal(true, f.annotations.has([2,2],'strong'));
+	t.end();
+});

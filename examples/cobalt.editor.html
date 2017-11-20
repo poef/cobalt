@@ -16,6 +16,17 @@
             min-height: 300px;
             white-space: pre;
         }
+        h1,h2,h3,p {
+        	min-height: 1.2em;
+        	display: inline-block;
+        	margin: 0;
+        }
+        #editor * + * {
+        	margin-top: 1em;
+        }
+        p.cobaltCursorSpace {
+        	display: block;
+        }
     </style>
 </head>
 <body>
@@ -26,6 +37,11 @@
     <script type="text/javascript">
         var editor = cobalt.editor.create( '#editor', '#debug');
         editor.focus();
+        document.addEventListener('focus', function(evt) {
+        	if (evt.target.className=='cobaltCursorSpace') {
+        		var s = window.getSelection();
+        	}
+        });
     </script>
 </body>
 </html>
