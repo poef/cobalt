@@ -203,7 +203,7 @@ module.exports = function(text, annotations) {
                 if (a.range.overlaps(range) && a.tag==tag) {
                     return true;
                 }
-            }).length>0;
+            }).count>0;
         }
     };
 
@@ -247,7 +247,7 @@ module.exports = function(text, annotations) {
             result = [];
             annotations.forEach(function(ann) {
                 if ( ann.range.overlaps(range) ) {
-                    result.push( cobalt.annotation( ann.range.overlap(range), ann.tag ) );
+                    result.push( cobalt.annotation( ann.range.intersect(range), ann.tag ) );
                 }
             });
             return new cobaltAnnotationList(result);
