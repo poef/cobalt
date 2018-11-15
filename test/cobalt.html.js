@@ -112,3 +112,14 @@ tap.test('render-regression-3', function(t) {
 	t.equal(h, '<ol><li>Foo</li></ol>\nBar\n<ol><li>Baz</li></ol>');
 	t.end();
 });
+
+tap.test('render-regression-4', function(t) {
+    var f = cobalt.fragment('FooBarBaz', '0-3:p\n0-9:ol\n0-3:li\n3-6:p\n3-6:li\n6-9:p\n6-9:li\n');
+    var h = cobalt.html.render(f);
+    t.equal(h, '<ol><li><p>Foo</p></li><li><p>Bar</p></li><li><p>Baz</p></li></ol>');
+
+    var f = cobalt.fragment('Foo\nBar\nBaz', '0-3:p\n0-11:ol\n0-3:li\n4-7:p\n4-7:li\n8-11:p\n8-11:li\n');
+    var h = cobalt.html.render(f);
+    t.equal(h, '<ol><li><p>Foo</p></li>\n<li><p>Bar</p></li>\n<li><p>Baz</p></li></ol>');
+    t.end();
+})
