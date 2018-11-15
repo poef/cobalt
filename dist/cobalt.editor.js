@@ -75,6 +75,16 @@
 	        focus: function() {
 	            this.container.focus();
 	        },
+	        enterRange: function() {
+	            var fragment = this.fragment;
+	            var enters = [];
+	            var range = fragment.search(/^.*$/gm);
+	            for (var i=0,l=range.ranges.length;i<l;i++) {
+	                enters.push(range.ranges[i]);
+	            }
+	            enters = cobalt.range(enters).invert(fragment.text.length);
+	            return enters;
+	        },
 	        render: function(sel) {
 	            var fragment = this.fragment;
 				var preAnnotations = '';
@@ -163,7 +173,7 @@
 	                this.render(sel);
 	            },
 	            'Control+1': function(sel) {
-	                this.fragment = this.fragment.apply(sel.range, 'h1');
+	                this.fragment = this.fragment.apply(sel.range.exclude(this.enterRange()), 'h1');
 	                this.render(sel);
 	            },
 	            'Control+2': function(sel) {

@@ -971,9 +971,9 @@
 	            range = cobalt.range(range);
 	            return this.filter(function(a) {
 	                if (
-	                    ( (range.size && a.range.overlaps(range)) 
+	                    ( (range.size && a.range.overlaps(range))
 	                       || (!range.size && range.start && a.range.overlaps(cobalt.range(range.start-1, range.start)) )
-	                    ) 
+	                    )
 	                    && a.tag==tag
 	                ) {
 	                    return true;
@@ -1231,10 +1231,10 @@
 	            'img': true,
 	            'hr' : true
 	        },
-			cannotHaveText: {
-				'ul': true,
-				'ol': true
-			},
+	        cannotHaveText: {
+	            'ul': true,
+	            'ol': true
+	        },
 	        specialRules: {
 	            'a': function(node) {
 	                do {
@@ -1255,11 +1255,12 @@
 	        'p':          rules.inline,
 	        'ol':         ['li'],
 	        'ul':         ['li'],
+	        'li':         rules.alltags.filter(function(tag) { return tag!='li'; }),
 	        'blockquote': rules.alltags,
 	        'div':        rules.alltags,
 	        'em':         rules.inline,
 	        'strong':     rules.inline,
-			'span':       rules.inline,
+	        'span':       rules.inline,
 	        'a':          rules.inline.filter(function(tag) { return tag!='a'; })
 	    };
 
@@ -1292,13 +1293,13 @@
 	        return canHaveChildTag(node.tagName, tagName) && specialRulesAllow(node, tagName);
 	    }
 
-		function textAllowed(node) {
-			if (typeof rules.cannotHaveText[node.tagName] == 'undefined' ) {
-				return true;
-			} else {
-				return !rules.cannotHaveText[node.tagName];
-			}
-		}
+	    function textAllowed(node) {
+	        if (typeof rules.cannotHaveText[node.tagName] == 'undefined' ) {
+	            return true;
+	        } else {
+	            return !rules.cannotHaveText[node.tagName];
+	        }
+	    }
 
 	    /**
 	     * Return the first word of a tag.
@@ -1375,6 +1376,11 @@
 	                return 1;
 	            }
 	            if (a.type == 'end' && b.type == 'start' ) {
+	                return -1;
+	            }
+	            if (a.range.end<b.range.end) {
+	                return 1;
+	            } else if (a.range.end>b.range.end) {
 	                return -1;
 	            }
 	            return 0;
@@ -1516,6 +1522,36 @@
 	            this.tagName     = this.tag ? stripTag(this.tag) : '';
 	            this.parentNode  = parentNode;
 	            this.childNodes  = [];
+	            Object.defineProperty(this, 'previousSibling', {
+	                get() {
+	                    var pos = this.parentNode.childNodes.indexOf(this);
+	                    if (pos) {
+	                        return this.parentNode.childNodes[pos-1];
+	                    } else {
+	                        return null;
+	                    }
+	                }
+	            });
+	            Object.defineProperty(this, 'nextSibling', {
+	                get() {
+	                    var pos = this.parentNode.childNodes.indexOf(this);
+	                    if (pos<(this.parentNode.childNodes.length-1)) {
+	                        return this.parentNode.childNodes[pos+1];
+	                    } else {
+	                        return null;
+	                    }
+	                }
+	            });
+	            Object.defineProperty(this, 'lastChild', {
+	                get() {
+	                    return this.childNodes.length ? this.childNodes[this.childNodes.length-1] : null;
+	                }
+	            });
+	            Object.defineProperty(this, 'firstChild', {
+	                get() {
+	                    return this.childNodes.length ? this.childNodes[0] : null;
+	                }
+	            });
 	            /**
 	             * Appends a new Element, created from the given entry, to this element
 	             */
@@ -1556,6 +1592,47 @@
 	        }
 
 	        /**
+	         * This function tries to find the last leaf node before the current pointer
+	         * where the entry can be legally appended
+	         * If no valid node is found, it returns null (rootElement.parentNode)
+	         */
+	        function findValidLocation(pointer, entry) {
+	            while ( pointer && !childAllowed(pointer, entry.tagName) ) {
+	                if ( pointer != rootElement ) {
+	                    suppressed.push(pointer.entry);
+	                    if (!pointer.hasContents() ) { 
+	                        var prev = pointer.previousSibling;
+	                        pointer.parentNode.removeChild(pointer);
+	                        // FIXME: merge split elements from single range, if possible
+	                        // get deepest last leaf node of previous sibling
+	                        if (prev && prev.tag) {
+	                            while (prev.lastChild && prev.lastChild.tag) {
+	                                prev = prev.lastChild;
+	                            }
+	                        }
+	                        // then walk up to see if child is allowed there
+	                        while (prev && prev.tag && !childAllowed(prev, entry.tagName) ) {
+	                            prev = prev.parentNode;
+	                        }
+	                        if (prev && prev.tag) {
+	                            pointer = prev;
+	                            // remove suppressed that are now parentNodes again
+	                            while (prev) {
+	                                suppressed = suppressed.filter(function(sup) {
+	                                    return sup != prev.entry;
+	                                });
+	                                prev = prev.parentNode;
+	                            }
+	                            break; // pointer is now correct, so don't set it to parentNode
+	                        }
+	                    }
+	                }
+	                pointer = pointer.parentNode;
+	            }
+	            return pointer;
+	        }
+
+	        /**
 	         * This function applies a single entry to the dom tree.
 	         * If the entry is of type 'start' or 'insert', it will try to append a child
 	         * If the entry is of type 'end', it will set the pointer to the
@@ -1569,33 +1646,25 @@
 	            var pointer = current;
 	            switch ( entry.type ) {
 	                case 'text':
-						if (entry.content.trim()) { // has non whitespace content
-							while (pointer && !textAllowed(pointer)) {
-								suppressed.push(pointer.entry);
-								if (!pointer.hasContents()) {
-									pointer.parentNode.removeChild(pointer);
-								}
-								pointer = pointer.parentNode;
-							}
-							if (pointer) {
-								pointer.childNodes.push(entry.content);
-								pointer = tryToOpen(suppressed, pointer);
-								current = pointer;
-							}
-						} else { // always allow whitespace
-		                    pointer.childNodes.push(entry.content);
-						}
-	                break;
-	                case 'start':
-	                    while ( pointer && !childAllowed(pointer, entry.tagName) ) {
-	                        if ( pointer != rootElement ) {
+	                    if (entry.content.trim()) { // has non whitespace content
+	                        while (pointer && !textAllowed(pointer)) {
 	                            suppressed.push(pointer.entry);
-	                            if (!pointer.hasContents() ) { // FIXME: merge split elements from single range, if possible
+	                            if (!pointer.hasContents()) {
 	                                pointer.parentNode.removeChild(pointer);
 	                            }
+	                            pointer = pointer.parentNode;
 	                        }
-	                        pointer = pointer.parentNode;
+	                        if (pointer) {
+	                            pointer.childNodes.push(entry.content);
+	                            pointer = tryToOpen(suppressed, pointer);
+	                            current = pointer;
+	                        }
+	                    } else { // always allow whitespace
+	                        pointer.childNodes.push(entry.content);
 	                    }
+	                break;
+	                case 'start':
+	                    pointer = findValidLocation(pointer, entry);
 	                    if ( pointer ) {
 	                        // this forces entry to be appended, as well as as much of
 	                        // the suppressed list as parent of entry as possible
