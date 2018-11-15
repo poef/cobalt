@@ -91,3 +91,24 @@ tap.test('render-nested-anchors', function(t) {
     t.equal(h, '<strong><a>This </a><a>is a </a><a>test</a></strong>', 'Order influences open/close tags');
     t.end();
 });
+
+tap.test('render-regression-1', function(t) {
+	var f = cobalt.fragment('Test',"0-4:p\n1-3:h1\n2-3:strong\n");
+	var h = cobalt.html.render(f);
+	t.equal(h, '<p>T</p><h1>e<strong>s</strong></h1><p>t</p>');
+	t.end();
+});
+
+tap.test('render-regression-2', function(t) {
+	var f = cobalt.fragment('Foo\nBar\nBaz','0-3:p\n4-7:p\n8-11:p\n4-7:ol\n4-7:li\n');
+	var h = cobalt.html.render(f);
+	t.equal(h, '<p>Foo</p>\n<ol><li><p>Bar</p></li></ol>\n<p>Baz</p>');
+	t.end();
+});
+
+tap.test('render-regression-3', function(t) {
+	var f = cobalt.fragment('Foo\nBar\nBaz','0-11:ol\n0-3:li\n8-11:li\n');
+	var h = cobalt.html.render(f);
+	t.equal(h, '<ol><li>Foo</li></ol>\nBar\n<ol><li>Baz</li></ol>');
+	t.end();
+});
