@@ -65,7 +65,6 @@
 	            em: false,
 	            u: false
 	        };
-
 	        if (debug) {
 	            this.debug = (typeof debug=='string' ? document.querySelector(debug) : debug);
 	        }
@@ -78,15 +77,25 @@
 	        },
 	        render: function(sel) {
 	            var fragment = this.fragment;
+				var preAnnotations = '';
 	            var range = fragment.search(/^.*$/gm);
-	            console.log('range: '+range);
-	            var preAnnotations = '';
 	            for ( var i=0,l=range.ranges.length;i<l;i++) {
 	                preAnnotations += range.ranges[i]+':p\n';
 	            }
+
+				var range = fragment.search(/^[0-9]+\. .*$/gm);
+	            if (range && range.count) {
+	    			preAnnotations += range.start+'-'+range.end+':ol\n';
+	                for ( var i=0,l=range.ranges.length;i<l;i++) {
+	                    preAnnotations += range.ranges[i]+':li\n';
+	                }
+	            }
+	//			var range = fragment.search(/^[0-9]+\. /gm);
+	//			preAnnotations += range+':span class="hidden"\n';
+
 	            fragment = cobalt.fragment(fragment.text, preAnnotations+fragment.annotations);
 	            var html = cobalt.html.render(fragment);
-	            this.container.innerHTML = html+'<p class="cobaltCursorSpace">&nbsp;</p>\n';// extra \n is to give the browser room for a cursor
+	            this.container.innerHTML = html+'\n';// extra \n is to give the browser room for a cursor
 	            if (sel) {
 	                var editor = this;
 	                //editor.selection.set(sel.range.collapse(), sel.range.start);
@@ -142,6 +151,7 @@
 	            'Enter': function(sel) {
 	                this.fragment = this.fragment.insert(sel.range, "\n");
 	                sel.range = sel.range.collapse().move(1);
+					sel.cursor = sel.range.end;
 	                this.render(sel);
 	            },
 	            'Control+b': function(sel) {
@@ -201,26 +211,11 @@
 	            } else {
 	                this.fragment = this.fragment.apply(range, tag);    
 	            }
-	/*
-	            var overlap = overlaps(range);
-	            if (overlap.count) {
-	                this.fragment = this.fragment.remove(overlap.list[0].range, tag);
-	                var cursorJoined = adjoinedRange(overlap.list[0].range, cobalt.range(cursor,cursor));
-	                if (cursorJoined) {
-	                    //exclude
-	                    this.fragment = this.fragment.apply(overlap.list[0].range.exclude(range), tag);
-	                } else {
-	                    //join
-	                    this.fragment = this.fragment.apply(overlap.list[0].range.join(range), tag);
-	                }
-	            } else {
-	                this.fragment = this.fragment.apply(range, tag);
-	            }
-	*/
 	        },
 	        append: function(sel, string) {
 	            this.fragment = this.fragment.insert(sel.range, string);
 	            sel.range = sel.range.collapse().move(1);
+				sel.cursor = sel.range.end;
 	            return sel;
 	/*            for (var tag in this.mode) {
 	                if (this.mode[tag]) {

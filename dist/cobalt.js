@@ -260,6 +260,8 @@
 	            this.ranges = [ new SingleRange(s,e) ];
 	        } else if ( Number.isInteger(s) ) {
 	            this.ranges = [ new SingleRange(s,s) ];
+	        } else if (typeof s != 'undefined' ) {
+	            throw new Error('illegal value');
 	        } else {
 	            this.ranges = [];
 	        }
@@ -384,51 +386,6 @@
 	                //console.log(ri+':'+si+':'+result.length);
 	            }
 	            return new Range(result);
-	/*
-	            // for each subrange in r
-	            // for each subrange in this
-	            // r.sub.exclude(this.sub)
-	            // then join the results
-	            range = cobalt.range(r);
-	            s = this.ranges.reduce(function(acc, sr) {
-	                ss = range.ranges.reduce(function(acc2, rr) {
-	                    if (sr.overlap
-	                }, []);
-	            }, []);
-
-	            //TODO: refactor this method to use more highlevel functions
-	            //and less code in this method itself.
-	            r = cobalt.range(r);
-	            var workstack = this.ranges.slice();
-	            workstack.reverse();
-	            var donestack = [];
-	            var ri = 0;
-	            var subrange = null;
-	            while( subrange = workstack.pop() ) {
-	                if ( ri >= r.ranges.length ) {
-	                    // no more ranges to exclude, so push the remainder
-	                    donestack.push(subrange);
-	                    continue;
-	                }
-
-	                // increment ri untill subrange is leftOf or overlaps ri
-	                while ( ri<r.ranges.length && subrange.rightOf(r.ranges[ri]) ) {
-	                    ri++;
-	                }
-
-	                if ( ri>=r.ranges.length || subrange.leftOf(r.ranges[ri]) ) {
-	                    // no overlap, so push it
-	                    donestack.push(subrange);
-	                } else if ( subrange.overlaps(r.ranges[ri]) ) {
-	                    var temp = subrange.exclude(r.ranges[ri]);
-	                    for ( var i=temp.length-1; i>=0; i-- ) {
-	                        workstack.push( temp[i] );
-	                    }
-	                    ri++; // this range is excluded so on to the next
-	                }
-	            }
-	            return new Range(donestack);
-	*/
 	        },
 	        /**
 	         * Return a new range consisting of the intersection or overlap of this and r.
@@ -1015,7 +972,7 @@
 	                if (a.range.overlaps(range) && a.tag==tag) {
 	                    return true;
 	                }
-	            }).length>0;
+	            }).count>0;
 	        }
 	    };
 
@@ -1059,7 +1016,7 @@
 	            result = [];
 	            annotations.forEach(function(ann) {
 	                if ( ann.range.overlaps(range) ) {
-	                    result.push( cobalt.annotation( ann.range.overlap(range), ann.tag ) );
+	                    result.push( cobalt.annotation( ann.range.intersect(range), ann.tag ) );
 	                }
 	            });
 	            return new cobaltAnnotationList(result);
@@ -1247,8 +1204,8 @@
 	     * These rules define the behaviour of the rendering as well as the editor.
 	     */
 	    var rules = {
-	        block: ['h1','h2','h3','p','ol','ul','li','blockquote','hr'],
-	        inline: ['em','strong','a','img','br'],
+	        block: ['h1','h2','h3','p','ol','ul','li','blockquote','hr','div'],
+	        inline: ['em','strong','a','img','br','span'],
 	        obligatoryChild: {
 	            'ol': ['li'],
 	            'ul': ['li']
@@ -1268,6 +1225,10 @@
 	            'img': true,
 	            'hr' : true
 	        },
+			cannotHaveText: {
+				'ul': true,
+				'ol': true
+			},
 	        specialRules: {
 	            'a': function(node) {
 	                do {
@@ -1289,8 +1250,10 @@
 	        'ol':         ['li'],
 	        'ul':         ['li'],
 	        'blockquote': rules.alltags,
+	        'div':        rules.alltags,
 	        'em':         rules.inline,
 	        'strong':     rules.inline,
+			'span':       rules.inline,
 	        'a':          rules.inline.filter(function(tag) { return tag!='a'; })
 	    };
 
@@ -1322,6 +1285,14 @@
 	    function childAllowed(node, tagName) {
 	        return canHaveChildTag(node.tagName, tagName) && specialRulesAllow(node, tagName);
 	    }
+
+		function textAllowed(node) {
+			if (typeof rules.cannotHaveText[node.tagName] == 'undefined' ) {
+				return true;
+			} else {
+				return !rules.cannotHaveText[node.tagName];
+			}
+		}
 
 	    /**
 	     * Return the first word of a tag.
@@ -1499,7 +1470,7 @@
 	         */
 	        function appendValidEntries(node, suppressed, entry) {
 	            var closed = [];
-	            while ( suppressed.length && !canHaveChildTag(suppressed[0].tagName, entry.tagName) ) {
+	            while ( suppressed.length && (!canHaveChildTag(node.tagName, suppressed[0].tagName) || !canHaveChildTag(suppressed[0].tagName, entry.tagName)) ) {
 	                closed.push(suppressed.shift());
 	            }
 	            while ( suppressed.length && canHaveChildTag(suppressed[0].tagName, entry.tagName) ) {
@@ -1592,13 +1563,28 @@
 	            var pointer = current;
 	            switch ( entry.type ) {
 	                case 'text':
-	                    pointer.childNodes.push(entry.content);
+						if (entry.content.trim()) { // has non whitespace content
+							while (pointer && !textAllowed(pointer)) {
+								suppressed.push(pointer.entry);
+								if (!pointer.hasContents()) {
+									pointer.parentNode.removeChild(pointer);
+								}
+								pointer = pointer.parentNode;
+							}
+							if (pointer) {
+								pointer.childNodes.push(entry.content);
+								pointer = tryToOpen(suppressed, pointer);
+								current = pointer;
+							}
+						} else { // always allow whitespace
+		                    pointer.childNodes.push(entry.content);
+						}
 	                break;
 	                case 'start':
 	                    while ( pointer && !childAllowed(pointer, entry.tagName) ) {
 	                        if ( pointer != rootElement ) {
 	                            suppressed.push(pointer.entry);
-	                            if (!pointer.hasContents() ) {
+	                            if (!pointer.hasContents() ) { // FIXME: merge split elements from single range, if possible
 	                                pointer.parentNode.removeChild(pointer);
 	                            }
 	                        }
