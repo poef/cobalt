@@ -181,6 +181,8 @@ module.exports = function(s,e) {
             this.ranges = [ new SingleRange(s,e) ];
         } else if ( Number.isInteger(s) ) {
             this.ranges = [ new SingleRange(s,s) ];
+        } else if (typeof s != 'undefined' ) {
+            throw new Error('illegal value');
         } else {
             this.ranges = [];
         }
@@ -305,51 +307,6 @@ module.exports = function(s,e) {
                 //console.log(ri+':'+si+':'+result.length);
             }
             return new Range(result);
-/*
-            // for each subrange in r
-            // for each subrange in this
-            // r.sub.exclude(this.sub)
-            // then join the results
-            range = cobalt.range(r);
-            s = this.ranges.reduce(function(acc, sr) {
-                ss = range.ranges.reduce(function(acc2, rr) {
-                    if (sr.overlap
-                }, []);
-            }, []);
-
-            //TODO: refactor this method to use more highlevel functions
-            //and less code in this method itself.
-            r = cobalt.range(r);
-            var workstack = this.ranges.slice();
-            workstack.reverse();
-            var donestack = [];
-            var ri = 0;
-            var subrange = null;
-            while( subrange = workstack.pop() ) {
-                if ( ri >= r.ranges.length ) {
-                    // no more ranges to exclude, so push the remainder
-                    donestack.push(subrange);
-                    continue;
-                }
-
-                // increment ri untill subrange is leftOf or overlaps ri
-                while ( ri<r.ranges.length && subrange.rightOf(r.ranges[ri]) ) {
-                    ri++;
-                }
-
-                if ( ri>=r.ranges.length || subrange.leftOf(r.ranges[ri]) ) {
-                    // no overlap, so push it
-                    donestack.push(subrange);
-                } else if ( subrange.overlaps(r.ranges[ri]) ) {
-                    var temp = subrange.exclude(r.ranges[ri]);
-                    for ( var i=temp.length-1; i>=0; i-- ) {
-                        workstack.push( temp[i] );
-                    }
-                    ri++; // this range is excluded so on to the next
-                }
-            }
-            return new Range(donestack);
-*/
         },
         /**
          * Return a new range consisting of the intersection or overlap of this and r.
