@@ -199,8 +199,14 @@ module.exports = function(text, annotations) {
         },
 */
         has: function( range, tag ) {
+            range = cobalt.range(range);
             return this.filter(function(a) {
-                if (a.range.overlaps(range) && a.tag==tag) {
+                if (
+                    ( (range.size && a.range.overlaps(range))
+                       || (!range.size && range.start && a.range.overlaps(cobalt.range(range.start-1, range.start)) )
+                    )
+                    && a.tag==tag
+                ) {
                     return true;
                 }
             }).count>0;
