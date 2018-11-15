@@ -19,8 +19,8 @@ module.exports = (function(self) {
      * These rules define the behaviour of the rendering as well as the editor.
      */
     var rules = {
-        block: ['h1','h2','h3','p','ol','ul','li','blockquote','hr'],
-        inline: ['em','strong','a','img','br'],
+        block: ['h1','h2','h3','p','ol','ul','li','blockquote','hr','div'],
+        inline: ['em','strong','a','img','br','span'],
         obligatoryChild: {
             'ol': ['li'],
             'ul': ['li']
@@ -40,6 +40,10 @@ module.exports = (function(self) {
             'img': true,
             'hr' : true
         },
+		cannotHaveText: {
+			'ul': true,
+			'ol': true
+		},
         specialRules: {
             'a': function(node) {
                 do {
@@ -61,8 +65,10 @@ module.exports = (function(self) {
         'ol':         ['li'],
         'ul':         ['li'],
         'blockquote': rules.alltags,
+        'div':        rules.alltags,
         'em':         rules.inline,
         'strong':     rules.inline,
+		'span':       rules.inline,
         'a':          rules.inline.filter(function(tag) { return tag!='a'; })
     };
 
@@ -94,6 +100,14 @@ module.exports = (function(self) {
     function childAllowed(node, tagName) {
         return canHaveChildTag(node.tagName, tagName) && specialRulesAllow(node, tagName);
     }
+
+	function textAllowed(node) {
+		if (typeof rules.cannotHaveText[node.tagName] == 'undefined' ) {
+			return true;
+		} else {
+			return !rules.cannotHaveText[node.tagName];
+		}
+	}
 
     /**
      * Return the first word of a tag.
@@ -271,7 +285,7 @@ module.exports = (function(self) {
          */
         function appendValidEntries(node, suppressed, entry) {
             var closed = [];
-            while ( suppressed.length && !canHaveChildTag(suppressed[0].tagName, entry.tagName) ) {
+            while ( suppressed.length && (!canHaveChildTag(node.tagName, suppressed[0].tagName) || !canHaveChildTag(suppressed[0].tagName, entry.tagName)) ) {
                 closed.push(suppressed.shift());
             }
             while ( suppressed.length && canHaveChildTag(suppressed[0].tagName, entry.tagName) ) {
@@ -364,13 +378,28 @@ module.exports = (function(self) {
             var pointer = current;
             switch ( entry.type ) {
                 case 'text':
-                    pointer.childNodes.push(entry.content);
+					if (entry.content.trim()) { // has non whitespace content
+						while (pointer && !textAllowed(pointer)) {
+							suppressed.push(pointer.entry);
+							if (!pointer.hasContents()) {
+								pointer.parentNode.removeChild(pointer);
+							}
+							pointer = pointer.parentNode;
+						}
+						if (pointer) {
+							pointer.childNodes.push(entry.content);
+							pointer = tryToOpen(suppressed, pointer);
+							current = pointer;
+						}
+					} else { // always allow whitespace
+	                    pointer.childNodes.push(entry.content);
+					}
                 break;
                 case 'start':
                     while ( pointer && !childAllowed(pointer, entry.tagName) ) {
                         if ( pointer != rootElement ) {
                             suppressed.push(pointer.entry);
-                            if (!pointer.hasContents() ) {
+                            if (!pointer.hasContents() ) { // FIXME: merge split elements from single range, if possible
                                 pointer.parentNode.removeChild(pointer);
                             }
                         }
