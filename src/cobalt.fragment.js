@@ -205,7 +205,7 @@ module.exports = function(text, annotations) {
                     ( (range.size && a.range.overlaps(range))
                        || (!range.size && range.start && a.range.overlaps(cobalt.range(range.start-1, range.start)) )
                     )
-                    && a.tag==tag
+                    && a.tagName==tag.split(/\s/)[0]
                 ) {
                     return true;
                 }

@@ -167,17 +167,11 @@ module.exports = function(range, tag) {
          * in the given tag.
          */
         has: function( tag ) {
-            //FIXME: should be able to specify attributes and attribute values as well
-            return this.stripTag() === tag.split(' ')[0];
+            //TODO: should be able to specify attributes and attribute values as well
+            return this.tagName === tag.split(/\s/)[0];
         },
         toString: function() {
             return this.range + ':' + this.tag;
-        },
-        /**
-         * Returns the first word in this tag.
-         */
-        stripTag: function() {
-            return this.tag.split(' ')[0];
         }
     }
 
