@@ -87,21 +87,21 @@
 	        },
 	        render: function(sel) {
 	            var fragment = this.fragment;
-				var preAnnotations = '';
+	            var preAnnotations = '';
 	            var range = fragment.search(/^.*$/gm);
 	            for ( var i=0,l=range.ranges.length;i<l;i++) {
 	                preAnnotations += range.ranges[i]+':p\n';
 	            }
 
-				var range = fragment.search(/^[0-9]+\. .*$/gm);
+	            var range = fragment.search(/^[0-9]+\. .*$/gm);
 	            if (range && range.count) {
-	    			preAnnotations += range.start+'-'+range.end+':ol\n';
+	                preAnnotations += range.start+'-'+range.end+':ol\n';
 	                for ( var i=0,l=range.ranges.length;i<l;i++) {
 	                    preAnnotations += range.ranges[i]+':li\n';
 	                }
 	            }
-	//			var range = fragment.search(/^[0-9]+\. /gm);
-	//			preAnnotations += range+':span class="hidden"\n';
+	//            var range = fragment.search(/^[0-9]+\. /gm);
+	//            preAnnotations += range+':span class="hidden"\n';
 
 	            fragment = cobalt.fragment(fragment.text, preAnnotations+fragment.annotations);
 	            var html = cobalt.html.render(fragment);
@@ -161,7 +161,7 @@
 	            'Enter': function(sel) {
 	                this.fragment = this.fragment.insert(sel.range, "\n");
 	                sel.range = sel.range.collapse().move(1);
-					sel.cursor = sel.range.end;
+	                sel.cursor = sel.range.end;
 	                this.render(sel);
 	            },
 	            'Control+b': function(sel) {
@@ -225,17 +225,8 @@
 	        append: function(sel, string) {
 	            this.fragment = this.fragment.insert(sel.range, string);
 	            sel.range = sel.range.collapse().move(1);
-				sel.cursor = sel.range.end;
+	            sel.cursor = sel.range.end;
 	            return sel;
-	/*            for (var tag in this.mode) {
-	                if (this.mode[tag]) {
-	                    this.fragment = this.fragment.apply(
-	                        cobalt.range(sel.range.start, sel.range.end+1),
-	                        tag
-	                    );
-	                }
-	            }
-	*/
 	        }
 	    }
 

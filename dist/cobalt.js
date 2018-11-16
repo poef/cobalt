@@ -656,17 +656,11 @@
 	         * in the given tag.
 	         */
 	        has: function( tag ) {
-	            //FIXME: should be able to specify attributes and attribute values as well
-	            return this.stripTag() === tag.split(' ')[0];
+	            //TODO: should be able to specify attributes and attribute values as well
+	            return this.tagName === tag.split(/\s/)[0];
 	        },
 	        toString: function() {
 	            return this.range + ':' + this.tag;
-	        },
-	        /**
-	         * Returns the first word in this tag.
-	         */
-	        stripTag: function() {
-	            return this.tag.split(' ')[0];
 	        }
 	    }
 
@@ -1378,11 +1372,12 @@
 	            if (a.type == 'end' && b.type == 'start' ) {
 	                return -1;
 	            }
-	            if (a.range.end<b.range.end) {
-	                return 1;
-	            } else if (a.range.end>b.range.end) {
-	                return -1;
-	            }
+	            // entries that end later are pushed back
+	//            if (a.range.end<b.range.end) {
+	//                return 1;
+	//            } else if (a.range.end>b.range.end) {
+	//                return -1;
+	//            }
 	            return 0;
 	        });
 	        var position = 0;
