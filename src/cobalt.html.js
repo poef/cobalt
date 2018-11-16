@@ -188,11 +188,11 @@ module.exports = (function(self) {
                 return -1;
             }
             // entries that end later are pushed back
-            if (a.range.end<b.range.end) {
-                return 1;
-            } else if (a.range.end>b.range.end) {
-                return -1;
-            }
+//            if (a.range.end<b.range.end) {
+//                return 1;
+//            } else if (a.range.end>b.range.end) {
+//                return -1;
+//            }
             return 0;
         });
         var position = 0;
