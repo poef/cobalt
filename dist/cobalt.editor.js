@@ -521,7 +521,15 @@
 	        return treeWalker.nextNode();    
 	    };
 	    var getOffset = function(offset, node) {
-	        var cobaltOffset = offset;
+			if (node.nodeType==Node.ELEMENT_NODE) {
+				var cobaltOffset = 0;
+				var newNode = node.childNodes.item(offset);
+				if (newNode) {
+					node = newNode;
+				}
+			} else {
+		        var cobaltOffset = offset;
+			}
 	        var textContent = "";
 
 	        while (node = getPrevNode(node) ) {

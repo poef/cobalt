@@ -156,14 +156,14 @@
 	         * and not connected.
 	         */
 	        leftOf: function(s) {
-	            return this.collapse(true).compare(s.collapse())!=1;
+	            return this.collapse(true).compare(s.collapse())==-1;
 	        },
 	        /**
 	         * Returns true if this range is entirely to the right of the given range,
 	         * and not connected.
 	         */
 	        rightOf: function(s) {
-	            return this.collapse().compare(s.collapse(true))!=-1;
+	            return this.collapse().compare(s.collapse(true))==1;
 	        },
 	        /**
 	         * Returns true if there is a non-empty overlap.
@@ -359,31 +359,33 @@
 	            r = cobalt.range(r); // make sure r has only nonconsecutive, nonoverlapping singlerange subranges, ordered
 	            ri = 0;
 	            si = 0;
-	            result = this.ranges.slice();
-	            //console.log(''+this+' exclude '+r);
+	            result = this.ranges.slice().filter(function(singleRange) {
+					return singleRange.start!=singleRange.end;
+				});
 	            while (ri<r.ranges.length && si<result.length) {
-	                if (r.ranges[ri].leftOf(result[si])) {
+	                if (r.ranges[ri].leftOf(result[si]) || r.ranges[ri].end==result[si].start) {
 	                    ri++;
-	                } else if (r.ranges[ri].rightOf(result[si])) {
+	                } else if (r.ranges[ri].rightOf(result[si]) || r.ranges[ri].start==result[si].end) {
 	                    si++;
-	                } else {
-	                    //console.log(si+':'+ri);
+					} else {
+	//                    console.log(si+':'+ri);
+	//					console.log(result[si]+' : '+r.ranges[ri]);
 	                    var t1 = result[si].exclude(r.ranges[ri]);
-	                    //console.log(''+cobalt.range(t1));
+	//                    console.log(''+cobalt.range(t1));
 	                    if (t1.length) {
-	                        //console.log('remove: '+result[si]);
-	                        //console.log('insert: '+t1);
+	//                        console.log('remove: '+result[si]);
+	//                        console.log('insert: '+t1);
 	                        result = result.slice(0,si).concat(t1).concat(result.slice(si+1));
 	                        if (t1.count>1) {
 	                            si++;
 	                        }
 	                    } else {
-	                        //console.log('remove: '+result[si]);
+	//                        console.log('remove: '+result[si]);
 	                        result.splice(si,1);
 	                    }
-	                    //console.log(''+cobalt.range(result));
+	//                    console.log(''+cobalt.range(result));
 	                }
-	                //console.log(ri+':'+si+':'+result.length);
+	//                console.log(ri+':'+si+':'+result.length);
 	            }
 	            return new Range(result);
 	        },
@@ -946,9 +948,33 @@
 	         * Search through all annotations and return a new annotation list with
 	         * only those annotations that match the selector.
 	         */
-	        query: function( selector ) {
-	            //FIXME: design a selector syntax that makes sense for cobalt (no nesting)
-	            //then implement
+	        query: function( selector, max ) {
+	            function getTags(selector) {
+	                return selector.split(' ').map(function(tag) {
+	                    return tag.trim();
+	                });
+	            }
+
+	            var tags  = getTags(selector);
+	            var range = cobalt.range([0, max]);
+				var self  = this;
+	            tags.forEach(function(tag) {
+	                if (tag[0]=='-') {
+	                    tag = tag.substr(1);
+	                    var invert = true;
+	                }
+	                var tagRange = cobalt.range();
+	                self.list.filter(function(annotation) {
+	                    return annotation.tagName == tag;
+	                }).forEach(function(annotation) {
+	                    tagRange = tagRange.join(annotation.range);
+	                });
+	                if (invert) {
+	                    tagRange = tagRange.invert(max);
+	                }
+	                range = range.intersect(tagRange);
+	            });
+	            return range;
 	        },
 	        forEach: function( f ) {
 	            this.list.forEach(f);
@@ -1157,8 +1183,7 @@
 	         * Returns a range object encompassing all matched ranges.
 	         */
 	        query: function( selector ) {
-	            //FIXME: design a selector syntax that makes sense for cobalt (no nesting)
-	            //then implement
+				return this.annotations.query(selector, this.text.length);
 	        },
 	        /*
 	         * Returns a mime encoded string with the text and annotations.
