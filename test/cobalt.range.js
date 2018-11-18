@@ -140,6 +140,14 @@ tap.test('Intersect', function(t) {
     t.end();
 });
 
+tap.test('Intersect regression', function(t) {
+	var r1 = cobalt.range([10,10]);
+	var r2 = cobalt.range([6,7]);
+	var s = r1.intersect(r2);
+	t.equal(''+s, '');
+	t.end();
+});
+
 tap.test('Join', function(t) {
     var r1 = cobalt.range([[5,10],[15,20]]);
     var s = r1.join([8,12]);
