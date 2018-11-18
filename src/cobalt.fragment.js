@@ -183,9 +183,33 @@ module.exports = function(text, annotations) {
          * Search through all annotations and return a new annotation list with
          * only those annotations that match the selector.
          */
-        query: function( selector ) {
-            //FIXME: design a selector syntax that makes sense for cobalt (no nesting)
-            //then implement
+        query: function( selector, max ) {
+            function getTags(selector) {
+                return selector.split(' ').map(function(tag) {
+                    return tag.trim();
+                });
+            }
+
+            var tags  = getTags(selector);
+            var range = cobalt.range([0, max]);
+            var self  = this;
+            tags.forEach(function(tag) {
+                if (tag[0]=='-') {
+                    tag = tag.substr(1);
+                    var invert = true;
+                }
+                var tagRange = cobalt.range();
+                self.list.filter(function(annotation) {
+                    return annotation.tagName == tag;
+                }).forEach(function(annotation) {
+                    tagRange = tagRange.join(annotation.range);
+                });
+                if (invert) {
+                    tagRange = tagRange.invert(max);
+                }
+                range = range.intersect(tagRange);
+            });
+            return range;
         },
         forEach: function( f ) {
             this.list.forEach(f);
@@ -394,8 +418,7 @@ module.exports = function(text, annotations) {
          * Returns a range object encompassing all matched ranges.
          */
         query: function( selector ) {
-            //FIXME: design a selector syntax that makes sense for cobalt (no nesting)
-            //then implement
+            return this.annotations.query(selector, this.text.length);
         },
         /*
          * Returns a mime encoded string with the text and annotations.
