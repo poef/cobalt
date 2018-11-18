@@ -77,14 +77,14 @@ module.exports = function(s,e) {
          * and not connected.
          */
         leftOf: function(s) {
-            return this.collapse(true).compare(s.collapse())!=1;
+            return this.collapse(true).compare(s.collapse())==-1;
         },
         /**
          * Returns true if this range is entirely to the right of the given range,
          * and not connected.
          */
         rightOf: function(s) {
-            return this.collapse().compare(s.collapse(true))!=-1;
+            return this.collapse().compare(s.collapse(true))==1;
         },
         /**
          * Returns true if there is a non-empty overlap.
@@ -280,31 +280,33 @@ module.exports = function(s,e) {
             r = cobalt.range(r); // make sure r has only nonconsecutive, nonoverlapping singlerange subranges, ordered
             ri = 0;
             si = 0;
-            result = this.ranges.slice();
-            //console.log(''+this+' exclude '+r);
+            result = this.ranges.slice().filter(function(singleRange) {
+				return singleRange.start!=singleRange.end;
+			});
             while (ri<r.ranges.length && si<result.length) {
-                if (r.ranges[ri].leftOf(result[si])) {
+                if (r.ranges[ri].leftOf(result[si]) || r.ranges[ri].end==result[si].start) {
                     ri++;
-                } else if (r.ranges[ri].rightOf(result[si])) {
+                } else if (r.ranges[ri].rightOf(result[si]) || r.ranges[ri].start==result[si].end) {
                     si++;
-                } else {
-                    //console.log(si+':'+ri);
+				} else {
+//                    console.log(si+':'+ri);
+//					console.log(result[si]+' : '+r.ranges[ri]);
                     var t1 = result[si].exclude(r.ranges[ri]);
-                    //console.log(''+cobalt.range(t1));
+//                    console.log(''+cobalt.range(t1));
                     if (t1.length) {
-                        //console.log('remove: '+result[si]);
-                        //console.log('insert: '+t1);
+//                        console.log('remove: '+result[si]);
+//                        console.log('insert: '+t1);
                         result = result.slice(0,si).concat(t1).concat(result.slice(si+1));
                         if (t1.count>1) {
                             si++;
                         }
                     } else {
-                        //console.log('remove: '+result[si]);
+//                        console.log('remove: '+result[si]);
                         result.splice(si,1);
                     }
-                    //console.log(''+cobalt.range(result));
+//                    console.log(''+cobalt.range(result));
                 }
-                //console.log(ri+':'+si+':'+result.length);
+//                console.log(ri+':'+si+':'+result.length);
             }
             return new Range(result);
         },
