@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+    <title>Cobalt Editor</title>
+    <script type="text/javascript" src="../dist/cobalt.js"></script>
+    <script type="text/javascript" src="../dist/cobalt.editor-lite.js"></script>
+    <style type="text/css">
+        body {
+            padding-top: 60px;
+            line-height: 1.5em;
+        }
+        span.cursorSpace {
+        	min-height: 1.2em;
+        	line-height: 1.2em;
+        	min-width: 1em;
+        	display: inline-block;
+        }
+        #editor {
+            background: #EEE;
+            border-radius: 3px;
+            width: auto;
+            min-height: 300px;
+            border: 1px solid #AAA;
+            padding: 7px;
+            box-shadow: inset 2px 2px 10px #CCC;
+            font-family: Helvetica, sans-serif;
+            outline: none;
+            box-sizing: border-box;
+            padding-right: 200px;
+        }
+        #annotations {
+            width: 200px;
+            height: 100%;
+            position: absolute;
+            z-index: 10;
+            right: 0;
+            font-family: helvetica,sans-serif;
+            padding: 5px;
+            box-sizing: border-box;
+            background-color: #EEE;
+            border: 1px solid #888;
+            border-radius: 0 3px 3px 0;
+            box-shadow: -2px -2px 5px #CCC, inset 0px 0px 5px white;
+        }
+        #container {
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="annotations"></div>
+        <div id="editor" tabindex=1></div>
+    </div>
+    <pre id="debug"></pre>
+    <script type="text/javascript">
+        var editor = cobalt.editor.create( '#editor', '#debug');
+        editor.focus();
+        document.addEventListener('keyup', function(evt) {
+            if (evt.target.className=='cobaltCursorSpace') {
+                var selection = window.getSelection();
+                var range = document.createRange();
+                range.setStart(selection.anchorNode, selection.anchorOffset);
+                   range.setEnd(evt.target,0);
+                   selection.removeAllRanges();
+                selection.addRange(range)
+            }
+            var s = editor.selection.get();
+            var l = editor.fragment.annotations.filter(function(a) {
+                var result = a.range.intersect([s.cursor-1,s.cursor]).size!=null;
+                return result;
+            });
+            document.getElementById('annotations').innerHTML = s.cursor+'<br>'+l.list.map(function(a,i) {
+                return '<div class="tag" data-cobalt-index="'+i+'">'+a.tagName+'</div>';
+            }).join('');
+        });
+    </script>
+</body>
+</html>
