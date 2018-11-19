@@ -66,6 +66,9 @@ module.exports = function(text, annotations) {
         get count () {
             return this.list.length;
         },
+        item: function(index) {
+            return this.list[index];
+        },
         /**
          * Returns a string with all annotations joined by newlines.
          */
@@ -178,6 +181,12 @@ module.exports = function(text, annotations) {
          */
         reduce: function( previousValue, f ) {
             return this.list.reduce( previousValue, f);
+        },
+        get: function(range) {
+            range = cobalt.range.apply(cobalt.range, arguments);
+            return this.filter(function(annotation) {
+                return annotation.range.overlaps(range);
+            });
         },
         /**
          * Search through all annotations and return a new annotation list with
