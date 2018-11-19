@@ -9,4 +9,10 @@ module.exports = [{
   output: {
     filename: './dist/cobalt.editor.js'
   }
+},
+{
+  entry: './src/cobalt.editor-lite.js',
+  output: {
+    filename: './dist/cobalt.editor-lite.js'
+  }
 }];

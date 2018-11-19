@@ -831,6 +831,9 @@
 	        get count () {
 	            return this.list.length;
 	        },
+			item: function(index) {
+				return this.list[index];
+			},
 	        /**
 	         * Returns a string with all annotations joined by newlines.
 	         */
@@ -944,6 +947,12 @@
 	        reduce: function( previousValue, f ) {
 	            return this.list.reduce( previousValue, f);
 	        },
+			get: function(range) {
+				range = cobalt.range.apply(cobalt.range, arguments);
+				return this.filter(function(annotation) {
+					return annotation.range.overlaps(range);
+				});
+			},
 	        /**
 	         * Search through all annotations and return a new annotation list with
 	         * only those annotations that match the selector.
@@ -957,7 +966,7 @@
 
 	            var tags  = getTags(selector);
 	            var range = cobalt.range([0, max]);
-				var self  = this;
+	            var self  = this;
 	            tags.forEach(function(tag) {
 	                if (tag[0]=='-') {
 	                    tag = tag.substr(1);
@@ -1183,7 +1192,7 @@
 	         * Returns a range object encompassing all matched ranges.
 	         */
 	        query: function( selector ) {
-				return this.annotations.query(selector, this.text.length);
+	            return this.annotations.query(selector, this.text.length);
 	        },
 	        /*
 	         * Returns a mime encoded string with the text and annotations.
