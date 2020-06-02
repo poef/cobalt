@@ -5,9 +5,9 @@ import cobaltFragment from './cobalt.fragment.js';
 import cobaltHTML from './cobalt.html.js';
 
 export default {
-	range:      cobaltRange,
-	annotation: cobaltAnnotation,
-	mime:       cobaltMime,
-	fragment:   cobaltFragment,
-	html:       cobaltHTML,
+    range:      cobaltRange,
+    annotation: cobaltAnnotation,
+    mime:       cobaltMime,
+    fragment:   cobaltFragment,
+    html:       cobaltHTML,
 };
