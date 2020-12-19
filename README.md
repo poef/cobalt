@@ -19,11 +19,11 @@ issue is about editing. HTML was designed to be written in a text editor, not in
 
 So to be able to see which part of a text has which markup applied to it, the natural solution is to wrap 
 that part in a start and end tag. To see which start tag is ended by the end tag, the end tag re-states the tag 
-name. So you get markup like this: <em>italic text</em>.
+name. So you get markup like this: `<em>italic text</em>`.
 
 To add an extra layer of markup, you add another start and end tag. But these tags may not overlap. You cannot 
-do this: "<em>italic and <strong>bold</em> text</strong>". Instead you do this: 
-"<em>italic and <strong>bold</strong></em><strong> text</strong>". 
+do this: `<em>italic and <strong>bold</em> text</strong>`. Instead you do this: 
+`<em>italic and <strong>bold</strong></em><strong> text</strong>`. 
 
 In effect you are building a tree structure. When this tree structure gets a bit more complex, it becomes 
 difficult to follow in a text editor, unless you indent the markup. Each level of markup is indented, so the 
