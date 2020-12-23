@@ -1,0 +1,103 @@
+cobalt
++ window.cobaltEditor -> editor voor cobaltDocument
++ window.cobalt -> cobalt code
++ vormgeving
+	+ designsystem inladen
+	+ ds-space rondom editor
+	+ fonts
+	+ full page gebruiken
+	+ annotaties lijst rechts, donkere achtergrond
+- opslaan
+	+ localStorage
+		- opslaan met url pad als naam van het item?
+		- aangeven dat je lokale wijzigingen hebt?
+	- beaker?
+	- hosted? a la simplyedit?
+	- alternatief voor mime verzinnen. Json root met slices?
+	  tenminste nested documenten toestaan, en namen aan parts geven
+- render zonder editor
+	- api beschikbaar via window.cobaltDocument
+	- UAE stijl document (<script src="..."></script><!--\n )
+- window.cobaltDocument -> cobaltFragment instance
+	render maken die een cobaltDocument rendert zonder editor
+	cobalt.js moet default uae stijl document zoeken en renderen indien gevonden
+	voor nu ook altijd een button toevoegen die de editor opstart?
+- undo/redo
+- copy/paste
+- automatisch alles wat met (~|\n)([^\n]*) matched -> annoteren als 'line'
+- alles wat met (~|\n\n).*(\n\n|$) matched -> block
+- css selector toevoegen: x & y -> matched met alle ranges waar zowel annotatie x als annotatie y bestaat. dit na html translate vertalen naar ' x y, y x'.
+- keymap, css en javascript opslaan in document. Beginnen met dit default document.
+
+editor
+1 - trap maken voor onbekende alt/ctrl/command keys
+	+ prompt voor annotatie, default toggle, rightsticky
+	- checkboxes voor toggle/apply, sticky left/right/both/none
+	- loskoppelen annotatie en html rendering
+		vb: list item - annotatie ul zonder li, li prerender toevoegen
+2 - annotaties rechts 
+	- delete button
+	- show button (selecteer range)
+3 - save routine 
+	+ localstorage 
+	- filesystem api
+	- solid pod?
+4 - inladen document met keymap/scripts/css en render 
+	(editor opstarten via button)
+
+---
+
+autoformat:
+- prerender automatisch elke regel en elk blok met line resp. block annotation
+- maak een onchange event, met diff en selectie/cursor
+- je kan op specifieke annotatie type onchange doen
+- je kan ook onnewblock event doen, die als argument oude block meegeeft
+- zelfde voor onnewline
+- onnewblock('ol & block') -> haal de counter op van vorige block, hoog die op en voeg die counter toe aan nieuwe block, zoek volgende counters in huidige 'ol' en als nodig hoog die ook op. Counter is ook een annotatie, inhoud is bijv. '1. '.
+- je begint een 'ol' automatisch door in een block aan het begin iets als '1. ' te typen. Dus 
+
+cobaltDocument.addEventListener('change', 'block', evt => {
+	if (evt.block.range.contains(evt.selection.cursor)) {
+		var counterRe = /^([0-9]|[a-z])([\.\)\:\-])(\s)$/i;
+		if (evt.cobaltDocument.text
+			.copy(evt.block.range.start, evt.selection.cursor)
+			.matches(counterRe, matches)
+		)
+		{
+			evt.cobaltDocument.apply([evt.block.range.start, evt.selection.cursor], 'counter'); // non-editable
+			evt.cobaltDocument.apply([evt.block.range.start, evt.selection.cursor], 'ol'); // left*right sticky
+		} else {
+			var counter = evt.cobaltDocument.copy(evt.block.range).get('counter');
+			//FIXME: copy reset waalijk de start offsets hier, dus uitzoeken
+			// hoe je dit wel doet.
+			if (counter && !evt.cobaltDocument.copy(counter.range).matches(counterRe))
+				evt.cobaltDocument.remove(counter);
+				//FIXME: als er nog een spatie na de counter komt, dan kun je de counter annotatie uitbreiden en past het weer.
+			}
+		}
+	}
+});
+
+beoogd effect: als je als eerste letters iets als '1. ' intypt, dan wordt de '1. ' automatisch van annotatie 'counter' voorzien. Als je vervolgens bijv. de spatie weer weghaalt, dan verdwijnt die annotatie weer. Hiermee heb je de list counter ook netjes in de text.
+TODO: automatisch verder nummeren bij de start van elk volgend block.
+
+events:
+alle events firen op cobaltDocument zelf, nooit op een annotatie object of annotatie lijst of text. Dus je hoeft geen bubbling e.d. te doen. Je moet altijd opgeven welke annotaties je in geinterresseerd bent, mag ook '*' zijn. Event krijgt de annotatie mee. Er is geen boom dus er is niet 1 eenduidige parent/target. Misschien moet je meer dan 1 annotatie tag op kunnen geven, of zelfs een querySelector:
+
+cobaltDocument.addEventListener('change','ol & block', evt => { ... })
+
+de remove van counter kun je dan op een expliciete selector hangen:
+
+cobaltDocument.addEventListener('change','ol & counter', evt => { ... })
+
+
+cobaltDocument:
+- container voor meerdere subdocumenten, gevuld vanuit mime document.
+- cobaltDocument bevat 1 main fragment, die kun je direct op cobaltDocument aanroepen:
+  cobaltDocument.text / .annotations
+- cobaltDocument.fragments bevat de overige subdocumenten, elk met content-type en naam. 
+TODO: bij mime.encode ook een naam kunnen opgeven bij een part
+TODO; bij mime.encode ook extra fragments op kunnen geven
+TODO: nesten van cobalt fragments in mime
+TODO: mime-type voor dit document formaat? application/cobalt?
+
