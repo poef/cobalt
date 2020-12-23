@@ -66,6 +66,24 @@ tap.test('Insert', function(t) {
     t.end();
 });
 
+tap.test('InsertLeft', function(t) {
+    var r = cobalt.range(5, 20);
+    var s = r.insert( cobalt.range(5,6) );
+    t.equal(s.start, 5);
+    t.equal(s.end, 21);
+    t.equal(r.end, 20);
+    t.end();
+});
+
+tap.test('InsertRight', function(t) {
+    var r = cobalt.range(5, 20);
+    var s = r.insert( cobalt.range(20,21) );
+    t.equal(s.start, 5);
+    t.equal(s.end, 21);
+    t.equal(r.end, 20);
+    t.end();
+});
+
 tap.test('CreateDisjointed', function(t) {
     var r = cobalt.range([[5,10],[15,20]]);
     t.equal(''+r, '5-10,15-20');
