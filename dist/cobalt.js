@@ -429,9 +429,9 @@
         }
         var s = [];
         range.forEach(function(r) {
-            if ( r.end < pos ) {
+            if ( r.end <= pos ) {
                 s.push( new CobaltSingleRange( r.start, r.end ) );
-            } else if ( r.start >= pos ) {
+            } else if ( r.start > pos ) {
                 s.push( new CobaltSingleRange( r.start + length, r.end + length) );
             } else {
                 s.push( new CobaltSingleRange( r.start, r.end + length) );
@@ -1660,12 +1660,507 @@
     		rules: rules
     	};
 
+    class cobaltEditorKeyboard {
+
+    	keyCodes = [];
+
+    	constructor() {
+    		this.keyCodes[3]  = 'Cancel';
+    		this.keyCodes[6]  = 'Help';
+    		this.keyCodes[8]  = 'Backspace';
+    		this.keyCodes[9]  = 'Tab';
+    		this.keyCodes[12] = 'Numlock-5';
+    		this.keyCodes[13] = 'Enter';
+
+    		this.keyCodes[16] = 'Shift';
+    		this.keyCodes[17] = 'Control';
+    		this.keyCodes[18] = 'Alt';
+    		this.keyCodes[19] = 'Pause';
+    		this.keyCodes[20] = 'CapsLock';
+    		this.keyCodes[21] = 'KanaMode'; //HANGUL
+
+    		this.keyCodes[23] = 'JunjaMode';
+    		this.keyCodes[24] = 'FinalMode';
+    		this.keyCodes[25] = 'HanjaMode'; //KANJI
+
+    		this.keyCodes[27] = 'Escape';
+    		this.keyCodes[28] = 'Convert';
+    		this.keyCodes[29] = 'NonConvert';
+    		this.keyCodes[30] = 'Accept';
+    		this.keyCodes[31] = 'ModeChange';
+    		this.keyCodes[32] = 'Spacebar';
+    		this.keyCodes[33] = 'PageUp';
+    		this.keyCodes[34] = 'PageDown';
+    		this.keyCodes[35] = 'End';
+    		this.keyCodes[36] = 'Home';
+    		this.keyCodes[37] = 'ArrowLeft';
+    		this.keyCodes[38] = 'ArrowUp';
+    		this.keyCodes[39] = 'ArrowRight'; // opera has this as a "'" as well...
+    		this.keyCodes[40] = 'ArrowDown';
+    		this.keyCodes[41] = 'Select';
+    		this.keyCodes[42] = 'Print';
+    		this.keyCodes[43] = 'Execute';
+    		this.keyCodes[44] = 'PrintScreen'; // opera ';';
+    		this.keyCodes[45] = 'Insert'; // opera has this as a '-' as well...
+    		this.keyCodes[46] = 'Delete'; // opera - ',';
+    		this.keyCodes[47] = '/'; // opera
+
+    		this.keyCodes[59] = ';';
+    		this.keyCodes[60] = '<';
+    		this.keyCodes[61] = '=';
+    		this.keyCodes[62] = '>';
+    		this.keyCodes[63] = '?';
+    		this.keyCodes[64] = '@';
+
+    		this.keyCodes[91] = 'OS'; // opera '[';
+    		this.keyCodes[92] = 'OS'; // opera '\\';
+    		this.keyCodes[93] = 'ContextMenu'; // opera ']';
+    		this.keyCodes[95] = 'Sleep';
+    		this.keyCodes[96] = '`';
+
+    		this.keyCodes[106] = '*'; // keypad
+    		this.keyCodes[107] = '+'; // keypad
+    		this.keyCodes[109] = '-'; // keypad
+    		this.keyCodes[110] = 'Separator';
+    		this.keyCodes[111] = '/'; // keypad
+
+    		this.keyCodes[144] = 'NumLock';
+    		this.keyCodes[145] = 'ScrollLock';
+
+    		this.keyCodes[160] = '^';
+    		this.keyCodes[161] = '!';
+    		this.keyCodes[162] = '"';
+    		this.keyCodes[163] = '#';
+    		this.keyCodes[164] = '$';
+    		this.keyCodes[165] = '%';
+    		this.keyCodes[166] = '&';
+    		this.keyCodes[167] = '_';
+    		this.keyCodes[168] = '(';
+    		this.keyCodes[169] = ')';
+    		this.keyCodes[170] = '*';
+    		this.keyCodes[171] = '+';
+    		this.keyCodes[172] = '|';
+    		this.keyCodes[173] = '-';
+    		this.keyCodes[174] = '{';
+    		this.keyCodes[175] = '}';
+    		this.keyCodes[176] = '~';
+
+    		this.keyCodes[181] = 'VolumeMute';
+    		this.keyCodes[182] = 'VolumeDown';
+    		this.keyCodes[183] = 'VolumeUp';
+
+    		this.keyCodes[186] = ';';
+    		this.keyCodes[187] = '=';
+    		this.keyCodes[188] = ',';
+    		this.keyCodes[189] = '-';
+    		this.keyCodes[190] = '.';
+    		this.keyCodes[191] = '/';
+    		this.keyCodes[192] = '`';
+
+    		this.keyCodes[219] = '[';
+    		this.keyCodes[220] = '\\';
+    		this.keyCodes[221] = ']';
+    		this.keyCodes[222] = "'";
+    		this.keyCodes[224] = 'Meta';
+    		this.keyCodes[225] = 'AltGraph';
+
+    		this.keyCodes[246] = 'Attn';
+    		this.keyCodes[247] = 'CrSel';
+    		this.keyCodes[248] = 'ExSel';
+    		this.keyCodes[249] = 'EREOF';
+    		this.keyCodes[250] = 'Play';
+    		this.keyCodes[251] = 'Zoom';
+    		this.keyCodes[254] = 'Clear';
+
+    		// a-z
+    		for ( var i=65; i<=90; i++ ) {
+    			this.keyCodes[i] = String.fromCharCode( i ).toLowerCase();
+    		}
+
+    		// 0-9
+    		for ( var i=48; i<=57; i++ ) {
+    			this.keyCodes[i] = String.fromCharCode( i );
+    		}
+    		// 0-9 keypad
+    		for ( var i=96; i<=105; i++ ) {
+    			this.keyCodes[i] = ''+(i-95);
+    		}
+
+    		// F1 - F24
+    		for ( var i=112; i<=135; i++ ) {
+    			this.keyCodes[i] = 'F'+(i-111);
+    		}
+    	}
+
+    	getKey( evt ) {
+    		var keyInfo = '';
+    		if ( evt.ctrlKey && evt.keyCode != 17 ) {
+    			keyInfo += 'Control+';
+    		}
+    		if ( evt.metaKey && evt.keyCode != 224 ) {
+    			keyInfo += 'Meta+';
+    		}
+    		if ( evt.altKey && evt.keyCode != 18 ) {
+    			keyInfo += 'Alt+';
+    		}
+    		if ( evt.shiftKey && evt.keyCode != 16 ) {
+    			keyInfo += 'Shift+';
+    		}
+    		// evt.key turns shift+a into A, while keeping shiftKey, so it becomes Shift+A, instead of Shift+a.
+    		// so while it may be the future, i'm not using it here.
+    		if ( evt.charCode ) {
+    			keyInfo += String.fromCharCode( evt.charCode ).toLowerCase();
+    		} else if ( evt.keyCode ) {
+    			if ( typeof this.keyCodes[evt.keyCode] == 'undefined' ) {
+    				keyInfo += '('+evt.keyCode+')';
+    			} else {
+    				keyInfo += this.keyCodes[evt.keyCode];
+    			}
+    		} else {
+    			keyInfo += 'Unknown';
+    		}
+    		return keyInfo;
+    	}
+
+    	listen( el, key, callback, capture ) {
+    		return el.addEventListener('keydown', function(evt) {
+    			var  pressedKey = self.getKey( evt );
+    			if ( key == pressedKey ) {
+    				callback.call( el, evt );
+    			}
+    		}, capture);
+    	}
+
+    	getCharacter(evt) {
+    		evt = evt || window.event;
+    		if ( evt.which!==0 && !evt.ctrlKey && !evt.metaKey && !evt.altKey ) {
+        		return String.fromCharCode(evt.which);
+        	}
+    	}
+
+    }
+
+    class cobaltEditorSelection {
+
+        get() {
+            var getOffset = function(offset, node) {
+                var treeWalker = document.createTreeWalker(
+                    editor.container,
+                    NodeFilter.SHOW_TEXT,
+                    function(node) {
+                        return NodeFilter.FILTER_ACCEPT;
+                    },
+                    false
+                );
+                var getPrevNode = function(node) {
+                    treeWalker.currentNode = node;
+                    return treeWalker.previousNode();    
+                };
+                if (node.nodeType==Node.ELEMENT_NODE) {
+                    var cobaltOffset = 0;
+                    var newNode = node.childNodes.item(offset);
+                    if (newNode) {
+                        node = newNode;
+                    }
+                } else {
+                    var cobaltOffset = offset;
+                }
+                var textContent = "";
+
+                while (node = getPrevNode(node) ) {
+                    textContent = node.textContent;
+                    cobaltOffset += textContent.length;
+                }
+                return cobaltOffset;
+            };
+            var sel   = window.getSelection();
+            var end   = getOffset(sel.focusOffset, sel.focusNode);
+            var start = getOffset(sel.anchorOffset, sel.anchorNode);
+            if (start<=end) {
+                return {
+                    range: cobalt.range(start, end),
+                    cursor: end
+                }
+            } else {
+                return {
+                    range: cobalt.range(end, start),
+                    cursor: end
+                }
+            }
+        }
+
+        set(range, cursor) {
+            var treeWalker = document.createTreeWalker(
+                editor.container,
+                NodeFilter.SHOW_TEXT,
+                function(node) {
+                    return NodeFilter.FILTER_ACCEPT;
+                },
+                false
+            );
+            var getOffsetAndNode = function(offset) {
+                var getNextNode = function(node) {
+                    treeWalker.currentNode = node;
+                    return treeWalker.nextNode();    
+                };
+                var node = getNextNode(editor.container);
+                var currOffset = 0;
+                var lastNode = editor.container;
+                while (node && currOffset<=offset) {
+                    if ((node.textContent.length + currOffset) < offset ) {
+                        currOffset += node.textContent.length;
+                        lastNode = node;
+                        node = getNextNode(node);
+                    } else {
+                        break;
+                    }
+                }
+                if (!node) {
+                    node = lastNode;
+                }
+                return {
+                    node: node,
+                    offset: offset - currOffset
+                }
+            };
+
+            if (cursor == range.start) {
+                var end   = getOffsetAndNode(range.start);
+                var start = getOffsetAndNode(range.end);
+            } else {
+                var start = getOffsetAndNode(range.start);
+                var end   = getOffsetAndNode(range.end);
+            }
+            var range = document.createRange();
+            range.setStart(start.node, start.offset);
+            range.setEnd(end.node, end.offset);
+            var selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    }
+
+    class cobaltEditor {
+
+        /**
+         * The list of keydown keys that are allowed to pass through
+         * to the contentEditable field
+         */
+        allowmap = {
+            'ArrowLeft':true,
+            'ArrowRight':true,
+            'ArrowUp':true,
+            'ArrowDown':true,
+            'PageUp':true,
+            'PageDown':true,
+            'Home':true,
+            'End':true,
+            'Shift+ArrowLeft':true,
+            'Shift+ArrowRight':true,
+            'Shift+ArrowUp':true,
+            'Shift+ArrowDown':true,
+            'Shift+PageUp':true,
+            'Shift+PageDown':true,
+            'Shift+Home':true,
+            'Shift+End':true,
+            'Ctrl+ArrowLeft':true,
+            'Ctrl+ArrowRight':true,
+            'Ctrl+ArrowUp':true,
+            'Ctrl+ArrowDown':true,
+            'Ctrl+PageUp':true,
+            'Ctrl+PageDown':true,
+            'Ctrl+Home':true,
+            'Ctrl+End':true
+        };
+
+        /**
+         * The keys handled onKeyDown by the editor
+         */
+        keymap = {
+            'Backspace': function(sel) {
+                if ( !sel.range.size ) {
+                    sel.range = cobalt$1.range(sel.range.start - 1, sel.range.end);
+                }
+                this.fragment = this.fragment.delete(sel.range);
+                sel.range = sel.range.collapse();
+                this.render(sel);
+            },
+            'Delete': function(sel) {
+                if ( !sel.range.size ) {
+                    sel.range = cobalt$1.range(sel.range.start, sel.range.end+1);
+                }
+                this.fragment = this.fragment.delete(sel.range);
+                sel.range = sel.range.collapse();
+                this.render(sel);
+            },
+            'Enter': function(sel) {
+                this.fragment = this.fragment.insert(sel.range, "\n");
+                sel.range = sel.range.collapse().move(1);
+                this.render(sel);
+            }
+        };
+
+
+        constructor(el, debug)
+        {
+            function handleKeyPressEvent(evt)
+            {
+                if ( !evt.ctrlKey && !evt.altKey && !evt.commandKey) {
+                    var sel  = this.selection.get();
+                    var char = cobaltEditorKeyboard.getCharacter(evt);
+                    if (char) {
+                        console.log('char',char);
+                        sel =this.append(sel, char);
+                        this.render(sel);
+                    }
+                }
+                var key = cobaltEditorKeyboard.getKey(evt);
+                if (!this.allowmap[key]) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    return false;
+                } else {
+                    console.log('Allowed key',key);
+                }
+            }
+
+            function handleKeyDownEvent(evt)
+            {
+                var key = cobaltEditorKeyboard.getKey(evt);
+                if ( this.keymap[key] ) {
+                    var sel = this.selection.get();
+                    this.keymap[key].call(this, sel);
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    return false;
+                }
+            }
+
+            let editor = this;
+            this.container = ( typeof el == 'string' ? document.querySelector(el) : el );
+            this.container.contentEditable = true;
+            this.fragment  = cobalt$1.fragment('','');
+            this.selection = cobaltEditorSelection(this);
+            this.container.addEventListener('keypress', function(evt) {
+                handleKeyPressEvent.call(editor, evt);
+            });
+            this.container.addEventListener('keydown', function(evt) {
+                handleKeyDownEvent.call(editor, evt);
+            });
+            this.mode = [];
+            if (debug) {
+                this.debug = (typeof debug=='string' ? document.querySelector(debug) : debug);
+            }
+        }
+
+        focus() {
+            this.container.focus();
+        }
+
+        render(sel) {
+            var fragment = this.fragment;
+            var html = cobalt$1.html.render(fragment);
+            this.container.innerHTML = html+'<span class="cursorSpace"></span>';// extra \n is to give the browser room for a cursor
+            if (sel) {
+                var editor = this;
+                window.setTimeout(function() {
+                    editor.selection.set(sel.range, sel.cursor);
+                },20);
+                if (editor.debug) {
+                    editor.debug.innerText = '['+sel.range.start+','+sel.range.end+"]\n"+fragment;
+                }
+            }
+        }
+
+        toggle(range, tag, cursor) {
+            var editor = this;
+            if (range.size===0) {
+                this.mode[tag] = !this.mode[tag];
+                return;
+            }
+
+            var adjoinedRange = function(r,s) {
+                var x = r.join(s);
+                return (x.count <= r.count ? x : false);
+            };
+
+            var overlaps = function(r) {
+                return editor.fragment.annotations.filter(function(a) {
+                    if (a.tag==tag && adjoinedRange(a.range,r)) {
+                        return true;
+                    }
+                });
+            };
+
+            var overlap = overlaps(range);
+            if (overlap.count) {
+                if (overlap.list[0].range.intersect(range).size) {
+                    // echte overlap
+                    for (var i=0;i<overlap.list.length;i++) {
+                        this.fragment = this.fragment.remove(overlap.list[i].range, tag);
+                        this.fragment = this.fragment.apply(overlap.list[i].range.exclude(range), tag);
+                    }
+                } else {
+                    // alleen adjoined
+                    var combinedRange = range;
+                    for (var i=0;i<overlap.list.length;i++) {
+                        this.fragment = this.fragment.remove(overlap.list[i].range, tag);
+                        combinedRange = combinedRange.join(overlap.list[i].range);
+                    }
+                    this.fragment = this.fragment.apply(combinedRange, tag);
+                }
+            } else {
+                this.fragment = this.fragment.apply(range, tag);    
+            }
+        }
+
+        append(sel, string) {
+            this.fragment = this.fragment.insert(sel.range, string);
+    		if (this.mode.length) {
+    			var self = this;
+    			var range = sel.range;
+    			if (range.size==0) {
+    				range = cobalt$1.range(range.start-1,range.end);
+    			}
+    			this.mode.forEach(function(mode) {
+    				if (mode[0]=='-') {
+    					mode = mode.substr(1);
+    					// find annotation matching mode
+    					var ann = self.fragment.annotations.get(range).filter(function(ann) {
+    						return ann.tagName==mode;
+    					});
+    					ann = ann.item(ann.count-1);
+    					// cut out the inserted string
+    					if (ann) {
+    						self.fragment = self.fragment.remove(ann.range, ann.tag);
+    						self.fragment = self.fragment.apply(ann.range.exclude([sel.range.start,sel.range.start+string.length]),ann.tag);
+    					}
+    				} else {
+    					self.fragment = self.fragment.apply([sel.range.start, sel.range.start + string.length], mode);
+    				}
+    			});
+    			this.mode = [];
+    		}
+            sel.range = sel.range.collapse().move(string.length);
+            sel.cursor = sel.range.end;
+            return sel;
+        }
+
+    }
+
+    function cobaltEditor$1(el, debug) {
+        var editor = new cobaltEditor(el, debug);
+        editor.render();
+        return editor;
+    }
+
     var cobalt$1 = {
         range:      cobaltRange,
         annotation: cobaltAnnotation,
         mime:       mime,
         fragment:   cobaltFragment,
         html:       cobaltHTML,
+        editor:     cobaltEditor$1
     };
 
     return cobalt$1;

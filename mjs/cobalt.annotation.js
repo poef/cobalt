@@ -1,3 +1,5 @@
+import cobalt from './cobalt.js';
+
 class CobaltAnnotation {
     constructor(range, tag) {
         this.range = cobalt.range(range);

@@ -11,10 +11,12 @@ TODO:
   e.g. two overlapping anchors, render the overlapping part as
   <cobalt-anchor href="x">text</cobalt-anchor>. Which combined with some javascript
   allows you to render and follow overlapping links.
+- allow block elements inside anchor elements, if anchor elements direct parent allows
+  block elements as children.
 */
 
     /**
-     * These rules define the behaviour of the rendering as well as the editor.
+     * These rules define the behaviour of HTML rendering.
      */
     var rules = {
         block: ['h1','h2','h3','p','ol','ul','li','blockquote','hr','div'],
@@ -25,13 +27,6 @@ TODO:
         },
         obligatoryParent: {
             'li': ['ol','ul']
-        },
-        nextTag: {
-            'h1' : 'p',
-            'h2' : 'p',
-            'h3' : 'p',
-            'p'  : 'p',
-            'li' : 'li'
         },
         cannotHaveChildren: {
             'br' : true,

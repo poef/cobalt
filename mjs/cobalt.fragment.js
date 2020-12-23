@@ -6,6 +6,7 @@
  */
 
 import CobaltAnnotationList from './cobalt.annotationlist.js';
+import cobalt from './cobalt.js';
 
 /**
  * Non public text api.
@@ -220,6 +221,27 @@ class CobaltFragment {
             'Content-type: text/plain\n\n' + this.text,
             'Content-type: text/cobalt\n\n' + this.annotations
         ]);
+    }
+
+    /**
+     * Parses a mime encoded cobalt document, and returns a new CobaltFragment
+     * TODO: allow mimeDoc as single parameter of cobaltDocument(), not fragment.
+     * cobaltDocument can allow more than one cobaltFragment or other types of
+     * subdocuments.
+     */
+    parse(mimeDoc) {
+        var mime = cobalt.mime.decode(mimeDoc);
+        var text = '', annotations = '';
+        mime.parts.forEach(p => {
+            if (p.headers && p.headers['content-type']) {
+                if (p.headers['content-type']=='text/plain') {
+                    text = p.message;
+                } else if (p.headers['content-type']=='text/cobalt') {
+                    annotations = p.message;
+                }
+            }
+        });
+        return new CobaltFragment(text, annotations);
     }
 };
 

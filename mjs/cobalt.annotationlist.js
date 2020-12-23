@@ -1,3 +1,5 @@
+import cobalt from './cobalt.js';
+
 function parseAnnotations(annotations) {
     var reMarkupLine = /^(?:(([0-9]+\-[0-9]+)(,[0-9]+\-[0-9]+)*)):(.*)$/m;
     var matches = [];

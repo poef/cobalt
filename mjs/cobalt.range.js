@@ -8,6 +8,7 @@
  * Ranges have a start, end and size, and a count - the number of CobaltSingleRanges >= 0
  */
 import CobaltSingleRange from './cobalt.singlerange.js';
+import cobalt from './cobalt.js';
 
 class CobaltRange {
     constructor(s,e) {
