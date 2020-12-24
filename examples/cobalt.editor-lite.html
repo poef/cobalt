@@ -30,9 +30,10 @@
             padding: 5px 1em;
             border-top: 1px solid #666;
             border-bottom: 1px solid #000;
+            cursor: pointer;
         }
         .cobalt-button {
-
+            cursor: pointer;
         }
         .cobalt-button-naked {
             width: auto;
@@ -63,13 +64,13 @@
                 return;
             }
             var s = cobaltEditor.selection.get(cobaltEditor);
-            var l = cobaltEditor.fragment.annotations.filter(function(a) {
+            cobaltEditor.filteredAnnotations = cobaltEditor.fragment.annotations.filter(function(a) {
                 var result = a.range.intersect([s.cursor-1,s.cursor]).size!=null;
                 return result;
             });
             document.getElementById('annotations').innerHTML 
             =   '<div class="cobalt-range">'+(s.range.start!=s.range.end ? s.range : s.cursor)+'</div>'
-                +l.list.map(function(a,i) {
+                +cobaltEditor.filteredAnnotations.list.map(function(a,i) {
                     return `
     <div class="cobalt-tag" data-cobalt-index="${i}">
         <a data-cobalt-command="select-annotation" data-cobalt-value="${i}">${a.tagName}</a>
@@ -94,8 +95,8 @@
                     cobaltEditor.render(s);
                 },
                 'select-annotation': function(value) {
-                    var ann = cobaltEditor.fragment.annotations.item(value);
-                    var s = cobaltEditor.selection.get(cobaltEditor);
+                    var ann = cobaltEditor.filteredAnnotations.item(parseInt(value));
+                    var s   = cobaltEditor.selection.get(cobaltEditor);
                     s.range = ann.range;
                     cobaltEditor.render(s);
                 }
