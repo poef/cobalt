@@ -92,6 +92,26 @@ class cobaltEditor {
         },
         'Control+s': function() {
             this.save();
+        },
+        'Control+a': function(sel) {
+            sel.range = cobalt.range(0, this.fragment.text.length);
+            this.render(sel);
+        },
+        'Control+c': function(sel) {
+            this.clipboard = this.fragment.copy(sel.range);
+        },
+        'Control+x': function(sel) {
+            this.clipboard = this.fragment.copy(sel.range);
+            this.fragment = this.fragment.delete(sel.range);
+            sel.range = sel.range.collapse();
+            this.render(sel);
+        },
+        'Control+v': function(sel) {
+            if (this.clipboard) {
+                this.fragment = this.fragment.insert(sel.range, this.clipboard);
+                sel.range = sel.range.collapse().move(this.clipboard.text.length - sel.range.length);
+                this.render(sel);
+            }
         }
     };
 
