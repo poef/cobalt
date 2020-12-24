@@ -19,14 +19,33 @@
             display: inline;
         }
         #annotations {
-            width: 200px;
-            padding: 5px;
+            width: 15em;
             background-color: #333;
             color: #FFF;
         }
-        #container {
-            position: relative;
-            overflow: hidden;
+        .cobalt-range {
+            padding: 10px 1em;
+        }
+        .cobalt-tag {
+            padding: 5px 1em;
+            border-top: 1px solid #666;
+            border-bottom: 1px solid #000;
+        }
+        .cobalt-button {
+
+        }
+        .cobalt-button-naked {
+            width: auto;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            line-height: inherit;
+            font-size: inherit;
+        }
+        .cobalt-tag .cobalt-button {
+            float: right;
         }
     </style>
 </head>
@@ -36,23 +55,100 @@
     <script type="module">
         import cobalt from '../mjs/cobalt.js';
 
-        var editor = cobalt.editor( '#editor' );
-        window.cobaltEditor = editor;
-        window.cobaltDocument = editor.fragment;
-        editor.focus();
-        document.addEventListener('keyup', function(evt) {
-            var s = editor.selection.get(editor);
-            var l = editor.fragment.annotations.filter(function(a) {
+        window.cobaltEditor = cobalt.editor( '#editor' );
+        window.cobaltDocument = window.cobaltEditor.fragment;
+        window.cobaltEditor.focus();
+        var updateSideBar =function(evt) {
+            if (!evt.target || !evt.target.closest('#editor')) {
+                return;
+            }
+            var s = cobaltEditor.selection.get(cobaltEditor);
+            var l = cobaltEditor.fragment.annotations.filter(function(a) {
                 var result = a.range.intersect([s.cursor-1,s.cursor]).size!=null;
                 return result;
             });
             document.getElementById('annotations').innerHTML 
-            =   (s.range.start!=s.range.end?' ['+s.range.start+'-'+s.range.end+'] ': s.cursor)
-                + '<br>'
+            =   '<div class="cobalt-range">'+(s.range.start!=s.range.end ? s.range : s.cursor)+'</div>'
                 +l.list.map(function(a,i) {
-                    return '<div class="tag" data-cobalt-index="'+i+'">'+a.tagName+'</div>';
+                    return `
+    <div class="cobalt-tag" data-cobalt-index="${i}">
+        <a data-cobalt-command="select-annotation" data-cobalt-value="${i}">${a.tagName}</a>
+        <button class="cobalt-button cobalt-button-naked cobalt-delete-range" data-cobalt-command="remove-annotation" data-cobalt-value="${a.tagName}">&times;</button>
+    </div>
+`;
                 }).join('');
-        });
+        };
+        var editor = document.getElementById('editor');
+        editor.addEventListener('keyup', updateSideBar);
+        editor.addEventListener('mousedown', updateSideBar);
+        editor.addEventListener('mouseup', updateSideBar);
+        editor.addEventListener('touchstart', updateSideBar);
+        editor.addEventListener('touchend', updateSideBar);
+    </script>
+    <script>
+        (function() {
+            var commands = {
+                'remove-annotation': function(value) {
+                    var s = cobaltEditor.selection.get(cobaltEditor);
+                    cobaltEditor.toggle(s.range, value);
+                    cobaltEditor.render(s);
+                },
+                'select-annotation': function(value) {
+                    var ann = cobaltEditor.fragment.annotations.item(value);
+                    var s = cobaltEditor.selection.get(cobaltEditor);
+                    s.range = ann.range;
+                    cobaltEditor.render(s);
+                }
+            };
+
+            var handlers = [
+                {
+                    match: 'a,button',
+                    get: function(el) {
+                        return el.dataset.cobaltValue || el.href || el.value;
+                    },
+                    check: function(el,evt) {
+                        return evt.type=='click' && evt.ctrlKey==false && evt.button==0;
+                    }
+                }
+            ];
+
+            function getCommand(evt) {
+                var el = evt.target.closest('[data-cobalt-command]');
+                if (el) {
+                    var matched = false;
+                    for (var i=handlers.length-1; i>=0; i--) {
+                        if (el.matches(handlers[i].match)) {
+                            matched = true;
+                            if (handlers[i].check(el, evt)) {
+                                return {
+                                    name:   el.dataset.cobaltCommand,
+                                    source: el,
+                                    value:  handlers[i].get(el)
+                                };
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function commandHandler(evt) {
+                var command = getCommand(evt);
+                if ( command ) {
+                    if (!commands[command.name]) {
+                        console.error('cobalt.command: undefined command '+command.name);
+                    } else {
+                        commands[command.name].call(command.source, command.value);
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        return false;
+                    }
+                }
+            }
+
+            document.addEventListener('click', commandHandler);
+        })();
     </script>
 </body>
 </html>
