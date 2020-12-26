@@ -74,7 +74,7 @@ function parseFragment(fragment) {
                 case 'text/plain' :
                     text = part.message;
                   break;
-                case 'text/hope' :
+                case 'text/cobalt' :
                     annotations = part.message;
                 break;
             }
@@ -223,26 +223,6 @@ class CobaltFragment {
         ]);
     }
 
-    /**
-     * Parses a mime encoded cobalt document, and returns a new CobaltFragment
-     * TODO: allow mimeDoc as single parameter of cobaltDocument(), not fragment.
-     * cobaltDocument can allow more than one cobaltFragment or other types of
-     * subdocuments.
-     */
-    parse(mimeDoc) {
-        var mime = cobalt.mime.decode(mimeDoc);
-        var text = '', annotations = '';
-        mime.parts.forEach(p => {
-            if (p.headers && p.headers['content-type']) {
-                if (p.headers['content-type']=='text/plain') {
-                    text = p.message;
-                } else if (p.headers['content-type']=='text/cobalt') {
-                    annotations = p.message;
-                }
-            }
-        });
-        return new CobaltFragment(text, annotations);
-    }
 };
 
 export default function(text, annotations) {
