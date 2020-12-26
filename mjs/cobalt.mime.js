@@ -61,6 +61,13 @@ mime.encode = function( parts, message, headers ) {
 }
 
 mime.decode = function( message ) {
+	if (!message) {
+		return {
+			headers: [],
+			message: '',
+			parts: []
+		};
+	}
 	var part;
 	var parsed = mime.getHeaders( message );
 	parsed.parts = [];
