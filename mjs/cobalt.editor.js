@@ -185,7 +185,6 @@ class cobaltEditor {
         this.container = ( typeof container == 'string' ? document.querySelector(container) : container );
         this.container.contentEditable = true;
         this.container.spellcheck = false;
-        this.fragment  = cobalt.fragment('','');
         this.load();
         this.selection = cobaltEditorSelection;
         this.container.addEventListener('keypress', function(evt) {
@@ -328,7 +327,7 @@ class cobaltEditor {
 
     load() {
         var mimeDoc = localStorage.getItem('cobaltDocument');
-        this.fragment = this.fragment.parse(mimeDoc);
+        this.fragment = cobalt.fragment(mimeDoc); 
     }
 
 }
