@@ -2,10 +2,17 @@ import cobalt from './cobalt.js';
 
 class CobaltAnnotation {
     constructor(range, tag) {
+        if (typeof range == 'CobaltAnnotation') {
+            return range;
+        }
+        if (typeof tag == 'undefined') {
+            tag = range.substr(range.indexOf(':')+1);
+            range = range.substr(0, range.indexOf(':'));
+        }
         this.range = cobalt.range(range);
         this.tag   = tag.trim();
-        var elements = this.tag.split(/\s/);
-        this.tagName = elements.shift().toLowerCase();
+        var elements = this.tag.split(/\s/,1);
+        this.tagName = elements[0].toLowerCase();
         Object.freeze(this);
     }
 
