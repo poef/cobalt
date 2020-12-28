@@ -1,0 +1,108 @@
+CobaltSingleRange
+- (int) size()
+- (int) compare(r)
+- (r) collapse(bool toEnd)
+- (bool) equals(r)
+- (bool) smallerThan(r)
+- (bool) largerThan(r)
+- (bool) leftOf(r)
+- (bool) rightOf(r)
+- (bool) overlaps(r)
+- (bool) contains(r)
+- (r) overlap(r)
+- (array) exclude(r)
+- (strint) toString()
+
+cobaltRange
+- constructor(int|array|R start?, int end?)
+- (int|null) start()
+- (int|null) end()
+- (int|null) size()
+- (int) count()
+- (R) get(i)
+- (R) delete(R)
+- forEach(f)
+- (R) insert(R)
+- (R) collapse(bool toEnd)
+- (R) join(R)
+- (R) exclude(R)
+- (R) excludeDisjointed(R)
+- (R) intersect(R)
+- (R) move(int by)
+- (R) invert(int end)
+- (R) compare(R)
+- (bool) overlaps(R)
+- (string) toString()
+- (array) explode() // return an array of ranges for each singleRange in the range
+missing
+- map
+- reduce
+- filter
+
+cobaltAnnotation
+- constructor(R|A|string, string tag?) // todo: support A, string format
+- (A) delete(R)
+- (A) insert(R)
+- (A) exclude(R)
+- (A) join(R)
+- (A|null) copy(R)
+- (int) compare(A)
+- (bool) has(string tag)
+- (string) toString()
+missing
+- start
+- end
+- size
+- count
+- get
+- forEach
+- excludeDisjointed
+- intersect
+- move
+- invert
+- overlaps
+- map
+- reduce
+- filter
+
+cobaltAnnotationList
+- constructor(L|array|string)
+- (int) count()
+- (A) item(i)
+- (L) apply(R, string tag)
+- (L) remove(R, string tag)
+- (L) clear(R)
+- (L) delete(R)
+- (L) insert(R)
+- (L) filter(f)
+- (L) map(f)
+- (L) reduce(acc, f)
+- (L) get(R) //todo rename to avoid confusion with R.get -> copy?
+- (R) query(string selector, int max)
+- forEach(f)
+- (bool) has(R, string tag)
+missing
+- exclude
+- excludeDisjointed
+- intersect
+- move
+- invert
+- overlaps
+- has
+--
+- copy (in plaats van get?)
+
+
+cobaltFragment
+- constructor(T|F, L?)
+- (int) length()
+- (F) delete(R) // TODO accepteer A
+- (F) copy(R) // TODO accepteer A
+- (F) insert(R, F) // TODO accepteer A, L
+- (F) apply(R, string tag) // accepteer Annotation
+- (F) remove(R, string tag) // accepteer Annotation
+- (R) search(string|RegExp RE) //todo check type of searchRe
+- (R) query(string selector)
+- (string) toString()
+
+
