@@ -2,7 +2,7 @@ import cobalt from './cobalt.js';
 
 class CobaltAnnotation {
     constructor(range, tag) {
-        if (typeof range == 'CobaltAnnotation') {
+        if (range.constructor && range.constructor.name == 'CobaltAnnotation') {
             return range;
         }
         if (typeof tag == 'undefined') {
