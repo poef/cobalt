@@ -13,7 +13,11 @@ import cobalt from './cobalt.js';
 class CobaltRange {
     constructor(s,e) {
         let r = null;
-        if ( Array.isArray(s) ) {
+        if (s.constructor && s.constructor.name == 'CobaltRange') {
+            return s;
+        } else if (s.constructor && s.constructor.name == 'CobaltSingleRange') {
+            this.ranges = [ s ];
+        } else if ( Array.isArray(s) ) {
             // first argument is a range
             for ( var i=0, l=s.length; i<l; i++ ) {
                 if ( s[i] instanceof  CobaltSingleRange ) {
@@ -252,6 +256,10 @@ class CobaltRange {
 
     overlaps(r) {
         return this.intersect(r).size > 0;
+    }
+
+    explode() {
+        return this.ranges.map(r => new CobaltRange(r));
     }
 };
 
