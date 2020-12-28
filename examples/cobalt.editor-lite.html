@@ -22,6 +22,7 @@
             width: 15em;
             background-color: #333;
             color: #FFF;
+            user-select: none;
         }
         .cobalt-range {
             padding: 10px 1em;
@@ -64,6 +65,9 @@
                 return;
             }
             var s = cobaltEditor.selection.get(cobaltEditor);
+            renderSideBar(s);
+        };
+        var renderSideBar = function(s) {
             cobaltEditor.filteredAnnotations = cobaltEditor.fragment.annotations.filter(function(a) {
                 var result = a.range.intersect([s.cursor-1,s.cursor]).size!=null;
                 return result;
@@ -78,7 +82,8 @@
     </div>
 `;
                 }).join('');
-        };
+        }
+        
         var editor = document.getElementById('editor');
         editor.addEventListener('keyup', updateSideBar);
         editor.addEventListener('mousedown', updateSideBar);
