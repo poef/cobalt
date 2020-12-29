@@ -1,7 +1,7 @@
 import cobalt from './cobalt.js';
 import cobaltKeyboard from './cobalt.editor.keyboard.js';
 import cobaltEditorSelection from './cobalt.editor.selection.js';
-
+import cobaltEditorTag from './cobalt.editor.tag.js';
 /**
  * This class implements a basic cobalt editor in a web browser
  * It uses a contendEditable field in the browser for cursor
@@ -66,30 +66,9 @@ class cobaltEditor {
     };
 
     /**
-     * The keys handled onKeyDown by the editor
+     * The default keys handled onKeyDown by the editor
      */
     keymap = {
-        'Backspace': function(sel) {
-            if ( !sel.range.size ) {
-                sel.range = cobalt.range(sel.range.start - 1, sel.range.end);
-            }
-            this.fragment = this.fragment.delete(sel.range);
-            sel.range = sel.range.collapse();
-            this.render(sel);
-        },
-        'Delete': function(sel) {
-            if ( !sel.range.size ) {
-                sel.range = cobalt.range(sel.range.start, sel.range.end+1);
-            }
-            this.fragment = this.fragment.delete(sel.range);
-            sel.range = sel.range.collapse();
-            this.render(sel);
-        },
-        'Enter': function(sel) {
-            this.fragment = this.fragment.insert(sel.range, "\n");
-            sel.range = sel.range.collapse().move(1);
-            this.render(sel);
-        },
         'Control+s': function() {
             this.save();
         },
@@ -112,6 +91,35 @@ class cobaltEditor {
                 sel.range = sel.range.collapse().move(this.clipboard.text.length - sel.range.length);
                 this.render(sel);
             }
+        },
+        'Backspace': function(sel) {
+            if ( !sel.range.size ) {
+                sel.range = cobalt.range(sel.range.start - 1, sel.range.end);
+            }
+            this.fragment = this.fragment.delete(sel.range);
+            sel.range = sel.range.collapse();
+            this.render(sel);
+        },
+        'Delete': function(sel) {
+            if ( !sel.range.size ) {
+                sel.range = cobalt.range(sel.range.start, sel.range.end+1);
+            }
+            this.fragment = this.fragment.delete(sel.range);
+            sel.range = sel.range.collapse();
+            this.render(sel);
+        },
+        'Enter': function(sel) {
+            this.fragment = this.fragment.insert(sel.range, "\n");
+            sel.range = sel.range.collapse().move(1);
+            sel.cursor = sel.range.end;
+            this.fragment = this.fragment.clear(cobalt.range(sel.range.start-1,sel.range.start));
+            this.render(sel);
+        },
+        'Shift+Enter': function(sel) {
+            this.fragment = this.fragment.insert(sel.range, "\n");
+            sel.range = sel.range.collapse().move(1);
+            sel.cursor = sel.range.end;
+            this.render(sel);            
         }
     };
 
@@ -129,7 +137,7 @@ class cobaltEditor {
          */
         function handleKeyPressEvent(evt)
         {
-            if ( !evt.ctrlKey && !evt.altKey && !evt.commandKey) {
+            if ( !evt.ctrlKey && !evt.altKey && !evt.commandKey && !evt.metaKey) {
                 var sel  = this.selection.get(this);
                 var char = cobaltKeyboard.getCharacter(evt);
                 if (char) {
@@ -157,28 +165,59 @@ class cobaltEditor {
         function handleKeyDownEvent(evt)
         {
             var key = cobaltKeyboard.getKey(evt);
+            var sel = this.selection.get(this);
+            // check if any annotation in the cursor range has a keymap[key] entry
+            // find closest annotation that does
+            var annotations = [...this.fragment.annotations.contains(sel.cursor).list].sort((a,b) => {
+                var ar = a.range.contains(sel.cursor);
+                var br = b.range.contains(sel.cursor);
+                if (ar.start>br.start) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            });
+
+            for(var i=0,l=annotations.length;i<l;i++) {
+                var tag = annotations[i].tagName;
+                if (!this.annotations[tag]) { //TODO: store a list of tags with the correct class somewhere
+                    this.annotations[tag] = new cobaltEditorTag(this, tag);
+                }
+                if (this.annotations[tag].keymap[key]) {
+                    this.annotations[tag].keymap[key].call(this.annotations[tag], sel);
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    return false;
+                }
+            }
+
             if ( this.keymap[key] ) {
-                var sel = this.selection.get(this);
                 this.keymap[key].call(this, sel);
                 evt.preventDefault();
                 evt.stopPropagation();
                 return false;
-            } else if ( key.match(/(Control|Alt|Command|Meta)\+.+/)) {
+            } else if ( key.match(/(Control|Alt|Command|Meta)\+.+/)) { //FIXME: prevent firing for something like 'Control+Shift'
                 var ann = prompt('Annotation');
                 if (ann) {
+                    var tag = ann.trim().split(/\s/).shift();
+                    this.annotations[tag] = new cobaltEditorTag(this, tag);
                     this.keymap[key] = (function(ann) {
                         return function(sel) {
-                            this.toggle(sel.range, ann, sel.cursor);
+                            this.annotations[ann].update(sel);
                             this.render(sel);
                         }
                     })(ann);
-                    var sel = this.selection.get(this);
                     this.keymap[key].call(this, sel);
                 }
                 evt.preventDefault();
                 evt.stopPropagation();
                 return false;
             }
+        }
+
+        function updateSelection(evt) {
+            var sel = this.selection.get(this);
+            this.render(sel);
         }
 
         let editor = this;
@@ -193,10 +232,20 @@ class cobaltEditor {
         this.container.addEventListener('keydown', function(evt) {
             handleKeyDownEvent.call(editor, evt);
         });
+        this.container.addEventListener('keyup', function(evt) {
+            updateSelection.call(editor, evt);
+        });
+        this.container.addEventListener('mouseup', function(evt) {
+            updateSelection.call(editor, evt);
+        });
+        this.container.addEventListener('touchend', function(evt) {
+            updateSelection.call(editor, evt);
+        });
         this.mode = [];
         if (debug) {
             this.debug = (typeof debug=='string' ? document.querySelector(debug) : debug);
         }
+        this.annotations = {};
     }
 
     /**
@@ -212,6 +261,12 @@ class cobaltEditor {
      */
     render(sel) {
         var fragment = this.fragment;
+        if (sel && sel.range && sel.range.size) {
+            fragment = fragment.apply(sel.range, 'span class="cobalt-selection"');
+        }
+        if (sel && typeof sel.cursor!='undefined') {
+            fragment = fragment.apply(sel.cursor, 'span class="cobalt-cursor"');
+        }
         var html = cobalt.html.render(fragment);
         this.container.innerHTML = html+"\n";// extra \n is to give the browser room for a cursor
         if (sel) {
