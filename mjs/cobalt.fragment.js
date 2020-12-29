@@ -180,6 +180,13 @@ class CobaltFragment {
         );
     }
 
+    clear(range) {
+        return new CobaltFragment(
+            this.text,
+            this.annotations.clear(range)
+        );
+    }
+
     /**
      * Search through the text using a regular expression or string. Returns a range object
      * encompassing all matches.
