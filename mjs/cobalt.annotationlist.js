@@ -191,6 +191,12 @@ export default class CobaltAnnotationList {
         });
     }
 
+    contains(pos, greedy=false) {
+        return this.filter(function(annotation) {
+            return annotation.range.contains(pos, greedy);
+        });        
+    }
+
     /**
      * Search through all annotations and return a new annotation list with
      * only those annotations that match the selector.

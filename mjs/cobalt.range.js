@@ -258,6 +258,14 @@ class CobaltRange {
         return this.intersect(r).size > 0;
     }
 
+    contains(pos, greedy=false) {
+        if (greedy) {
+            return this.ranges.filter(s => s.start<=pos && s.end>=pos).pop();
+        } else {
+            return this.ranges.filter(s => s.start<pos && s.end>=pos).pop();
+        }
+    }
+
     explode() {
         return this.ranges.map(r => new CobaltRange(r));
     }
